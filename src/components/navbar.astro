@@ -1,0 +1,22 @@
+---
+// 页面导航组件
+import { Icon } from 'astro-icon/components'
+---
+
+<nav
+    class:list={[
+        'p-2 flex-shrink-0 border-black dark:border-white/10 flex ',
+        'border-t order-1',
+        'lg:border-t-0 lg:border-r lg:h-full lg:order-none',
+    ]}
+>
+    <div class:list={['flex gap-4', 'lg:flex-col']}>
+        <button
+            class='inline-flex items-center gap-4 hover:bg-gray-100 p-2 dark:hover:bg-white/5'
+        >
+            <Icon class='text-xl' name='pixelarticons:user' />
+            <span>档案</span>
+        </button>
+        <!-- 技能  作品集 博客-->
+    </div>
+</nav>

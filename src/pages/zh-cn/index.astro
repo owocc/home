@@ -1,9 +1,76 @@
 ---
-import HomeLayout from "../../layouts/HomeLayout.astro";
+import HomeLayout from '../../layouts/HomeLayout.astro'
+import Avatar from '../../components/avatar.astro'
+import { Icon } from 'astro-icon/components'
+import { Image } from 'astro:assets'
 ---
 
-<HomeLayout lang="zh-cn">
-    <div>
-        <h1>你好</h1>
+<HomeLayout lang='zh-cn'>
+    <div class='h-full w-full overflow-y-auto'>
+        <section id='me' class:list={['p-4 flex flex-col gap-2']}>
+            <div class='flex flex-col gap-2'>
+                <div class='flex gap-2'>
+                    <Avatar />
+                    <div class='text-xl flex gap-2'>
+                        <!-- <Icon name='vue' />
+                        <Icon name='next' />
+                        <Icon name='nuxt' /> -->
+                    </div>
+                </div>
+
+                <div class='text-2xl flex gap-2'>
+                    <Icon name='pixelarticons:github' />
+                    <Icon name='pixelarticons:mail' />
+                </div>
+            </div>
+            <div class=''>
+                <h1 class='text-2xl'>OWOCC</h1>
+                <div class='w-full h-px bg-black dark:bg-white my-2'></div>
+                <p>
+                    大家好,我是 OWOCC 一名全栈开发者
+                    我喜欢折腾各种新技术,虽然折腾没有什么意义,但当我知道这一点的时候已经没有意义了
+                    XD
+                </p>
+                <p>
+                    爱做梦(超能睡,我可以躺一整天) 不过要是肝起来,那么就是一整天
+                </p>
+            </div>
+            <div>
+                <header class='flex items-end gap-1'>
+                    <!-- <div class='w-1 block bg-black h-full'></div> -->
+                    <b
+                        class='text-xl inline-flex items-center gap-2 before:h-6 before:w-1 before:bg-black before:content-[""]'
+                        >项目</b
+                    >
+                    <span class='text-sm'>Project</span>
+                </header>
+                <div class='grid grid-cols-2 lg:grid-cols-3 gap-2 py-2'>
+                    <div
+                        class='border border-black dark:border-white/20 relative p-2'
+                    >
+                        <!-- <Image
+                            src='https://github.githubassets.com/assets/universe24-banner-graphic-10-50a1260c6f8e.jpg'
+                            height={270}
+                            width={467}
+                            alt='img'
+                            class='opacity-40 -z-[1]'
+                        /> -->
+                        <header>
+                            <div class='inline-flex items-center gap-1'>
+                                <Icon name='pixelarticons:article' />
+                                <b> Neo Library </b>
+                            </div>
+                        </header>
+
+                        <p>
+                            一个门户网站,结合 prism
+                            进行数据管理,可以方便的发布文章和
+                        </p>
+
+                        <a class=''> 在线预览 </a>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 </HomeLayout>

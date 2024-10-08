@@ -1,13 +1,25 @@
 ---
-import BasicLayout from "./BasicLayout.astro";
+import BasicLayout from './BasicLayout.astro'
+import Navbar from '../components/navbar.astro'
+
 interface Props {
-    lang: string;
+    lang: string
 }
-const { lang } = Astro.props;
+const { lang } = Astro.props
 ---
 
-<BasicLayout lang={lang} >
-    <main class="h-screen w-screen">
-        <slot />
-    </main>
+<BasicLayout lang={lang}>
+    <div class='h-full w-full p-6 bg-green-50 dark:bg-black dark:text-white'>
+        <main
+            class:list={[
+                'border h-full w-full border-black dark:border-white/10',
+                'flex flex-col',
+                'lg:flex-row',
+                'bg-white dark:bg-white/5',
+            ]}
+        >
+            <Navbar />
+            <slot />
+        </main>
+    </div>
 </BasicLayout>
