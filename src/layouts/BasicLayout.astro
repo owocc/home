@@ -1,0 +1,29 @@
+---
+// Basic Layout
+import { SEO } from "astro-seo";
+interface Props {
+    title: string;
+    lang: string;
+    description: string;
+}
+
+const { lang = "en", title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Astro description" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="generator" content={Astro.generator} />
+        <!-- <title>{title}</title> -->
+        <SEO
+            title={title}
+        />
+    </head>
+    <body>
+        <slot />
+    </body>
+</html>

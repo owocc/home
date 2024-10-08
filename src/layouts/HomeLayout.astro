@@ -1,0 +1,13 @@
+---
+import BasicLayout from "./BasicLayout.astro";
+interface Props {
+    lang: string;
+}
+const { lang } = Astro.props;
+---
+
+<BasicLayout lang={lang} >
+    <main class="h-screen w-screen">
+        <slot />
+    </main>
+</BasicLayout>
