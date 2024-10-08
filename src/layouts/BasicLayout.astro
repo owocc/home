@@ -2,9 +2,9 @@
 // Basic Layout
 import { SEO } from 'astro-seo'
 interface Props {
-    title: string
-    lang: string
-    description: string
+    title?: string
+    lang?: string
+    description?: string
 }
 
 const { lang = 'en', title, description } = Astro.props
