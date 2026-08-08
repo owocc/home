@@ -1,6 +1,9 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
+import ArrowLeft from '@lucide/astro/icons/arrow-left';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
 import Layout from '../../layouts/Layout.astro';
 
 interface Props {
@@ -30,7 +33,7 @@ const { Content } = await render(project);
 <Layout title={project.data.title} description={project.data.summary}>
 	<header class:list={['detail-header', 'project-detail-header', `theme-${project.data.theme}`]}>
 		<div class="shell">
-			<a class="detail-header__back" href="/projects/"><span aria-hidden="true">←</span>&nbsp; 返回项目列表</a>
+			<a class="detail-header__back" href="/projects/"><ArrowLeft class="icon" size={16} stroke-width={2.5} />返回项目列表</a>
 			<div class="detail-header__grid">
 				<div>
 					<p class="eyebrow">PROJECT CASE / 项目案例</p>
@@ -62,8 +65,8 @@ const { Content } = await render(project);
 			</ul>
 			{project.data.links && (
 				<div class="detail-links" aria-label="项目外部链接">
-					{project.data.links.live && <a href={project.data.links.live}>访问项目 <span aria-hidden="true">↗</span></a>}
-					{project.data.links.source && <a href={project.data.links.source}>查看源码 <span aria-hidden="true">↗</span></a>}
+					{project.data.links.live && <a href={project.data.links.live}>访问项目 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>}
+					{project.data.links.source && <a href={project.data.links.source}>查看源码 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>}
 				</div>
 			)}
 		</aside>
@@ -72,18 +75,18 @@ const { Content } = await render(project);
 	<nav class="case-nav shell" aria-label="项目翻页">
 		{previous ? (
 			<a class="case-nav__item case-nav__item--previous" href={`/projects/${previous.id}/`}>
-				<span class="eyebrow">← 上一个项目</span>
+				<span class="eyebrow"><ArrowLeft class="icon" size={15} stroke-width={2.5} />上一个项目</span>
 				<strong>{previous.data.title}</strong>
 			</a>
 		) : <span class="case-nav__empty" aria-hidden="true"></span>}
 		{next ? (
 			<a class="case-nav__item case-nav__item--next" href={`/projects/${next.id}/`}>
-				<span class="eyebrow">下一个项目 →</span>
+				<span class="eyebrow">下一个项目 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
 				<strong>{next.data.title}</strong>
 			</a>
 		) : (
 			<a class="case-nav__item case-nav__item--next" href="/projects/">
-				<span class="eyebrow">回到档案 →</span>
+				<span class="eyebrow">回到档案 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
 				<strong>全部项目</strong>
 			</a>
 		)}

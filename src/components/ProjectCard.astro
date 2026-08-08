@@ -1,5 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
+import Braces from '@lucide/astro/icons/braces';
+import CodeXml from '@lucide/astro/icons/code-xml';
 
 interface Props {
 	project: CollectionEntry<'projects'>;
@@ -14,7 +17,9 @@ const number = String(index + 1).padStart(2, '0');
 	<a class="project-card__link" href={`/projects/${project.id}/`} aria-label={`查看项目：${project.data.title}`}>
 		<div class="project-card__visual" aria-hidden="true">
 			<span class="project-card__number display">{number}</span>
-			<span class="project-card__glyph display">{index % 2 === 0 ? '{ }' : '</>'}</span>
+			<span class="project-card__glyph display">
+				{index % 2 === 0 ? <Braces class="icon" size={76} stroke-width={1.8} /> : <CodeXml class="icon" size={76} stroke-width={1.8} />}
+			</span>
 			<span class="project-card__year">{project.data.year}</span>
 		</div>
 		<div class="project-card__body">
@@ -24,7 +29,7 @@ const number = String(index + 1).padStart(2, '0');
 			<ul class="tag-list" aria-label="项目标签">
 				{project.data.tags.map((tag) => <li>{tag}</li>)}
 			</ul>
-			<span class="text-link">阅读案例 <span aria-hidden="true">↗</span></span>
+			<span class="text-link">阅读案例 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></span>
 		</div>
 	</a>
 </article>

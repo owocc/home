@@ -1,6 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
+import ArrowLeft from '@lucide/astro/icons/arrow-left';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
 import Layout from '../../layouts/Layout.astro';
 
 interface Props {
@@ -31,7 +33,7 @@ const dateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'l
 <Layout title={post.data.title} description={post.data.description}>
 	<header class="detail-header blog-detail-header">
 		<div class="shell">
-			<a class="detail-header__back" href="/blog/"><span aria-hidden="true">←</span>&nbsp; 返回文章列表</a>
+			<a class="detail-header__back" href="/blog/"><ArrowLeft class="icon" size={16} stroke-width={2.5} />返回文章列表</a>
 			<div class="detail-header__grid">
 				<div>
 					<p class="eyebrow">FIELD NOTE / 创作笔记</p>
@@ -75,18 +77,18 @@ const dateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'l
 	<nav class="case-nav shell" aria-label="文章翻页">
 		{previous ? (
 			<a class="case-nav__item case-nav__item--previous" href={`/blog/${previous.id}/`}>
-				<span class="eyebrow">← 更新一篇</span>
+				<span class="eyebrow"><ArrowLeft class="icon" size={15} stroke-width={2.5} />更新一篇</span>
 				<strong>{previous.data.title}</strong>
 			</a>
 		) : <span class="case-nav__empty" aria-hidden="true"></span>}
 		{next ? (
 			<a class="case-nav__item case-nav__item--next" href={`/blog/${next.id}/`}>
-				<span class="eyebrow">更早一篇 →</span>
+				<span class="eyebrow">更早一篇 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
 				<strong>{next.data.title}</strong>
 			</a>
 		) : (
 			<a class="case-nav__item case-nav__item--next" href="/blog/">
-				<span class="eyebrow">回到笔记 →</span>
+				<span class="eyebrow">回到笔记 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
 				<strong>全部文章</strong>
 			</a>
 		)}

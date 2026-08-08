@@ -110,7 +110,9 @@ draft: false
 
 原创图片位于 `src/assets/images/`：
 
-- `hero-peek.png`：首页探头角色透明图。
+- `hero-peek.png`：旧版首页探头角色透明图，保留作历史素材。
+- `hero/hero-thinking.webp`、`hero-curious.webp`、`hero-idea.webp`：首页托腮角色的思考、好奇与灵感状态。
+- `hero/hero-eye-left.png`、`hero-eye-right.png`：独立眼球图层，由 `HeroCharacter.astro` 根据鼠标位置移动。
 - `mascot-bust.png`：简历页半身角色透明图。
 - `paper-texture.webp`：全站低对比度纸张纹理。
 - `public/og.png`：社交分享海报（1734 × 907）。

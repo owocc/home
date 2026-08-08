@@ -1,9 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
+import ArrowDown from '@lucide/astro/icons/arrow-down';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
+import CodeXml from '@lucide/astro/icons/code-xml';
+import Pencil from '@lucide/astro/icons/pencil';
+import Sparkles from '@lucide/astro/icons/sparkles';
 import BlogCard from '../components/BlogCard.astro';
+import HeroCharacter from '../components/HeroCharacter.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import heroPeek from '../assets/images/hero-peek.png';
 import siteConfig from '../data/site';
 import Layout from '../layouts/Layout.astro';
 
@@ -22,23 +28,16 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 		<div class="home-hero__canvas shell">
 			<p class="home-hero__welcome eyebrow" data-reveal>{siteConfig.identity.eyebrow}</p>
 
-			<div class="home-hero__stage">
-				<div class="home-hero__wall" aria-hidden="true">
-					<span class="home-hero__wall-label display">IDEAS</span>
-					<span class="hero-sticker hero-sticker--code" data-parallax="1.1">&lt;/&gt;</span>
-					<span class="hero-sticker hero-sticker--spark" data-parallax="1.6">✦</span>
-					<span class="hero-sticker hero-sticker--note script" data-parallax="0.7">make it real!</span>
+			<div class="home-hero__scene">
+				<div class="home-hero__stage">
+					<div class="home-hero__wall" aria-hidden="true">
+						<span class="home-hero__wall-label display">IDEAS</span>
+						<span class="hero-sticker hero-sticker--code" data-parallax="1.1"><CodeXml class="icon" size={30} stroke-width={2.4} /></span>
+						<span class="hero-sticker hero-sticker--spark" data-parallax="1.6"><Sparkles class="icon" size={34} stroke-width={2.3} /></span>
+						<span class="hero-sticker hero-sticker--note script" data-parallax="0.7">make it real!</span>
+					</div>
 				</div>
-				<div class="home-hero__character" data-parallax="0.55">
-					<img
-						src={heroPeek.src}
-						alt="戴着耳机、从画面边缘探出头的卡通人物"
-						width={heroPeek.width}
-						height={heroPeek.height}
-						loading="eager"
-						fetchpriority="high"
-					/>
-				</div>
+				<HeroCharacter />
 			</div>
 
 			<div class="home-hero__title-wrap" data-reveal>
@@ -54,7 +53,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 					<strong>{siteConfig.identity.role}</strong>
 				</p>
 				<p class="home-hero__intro">{siteConfig.identity.intro}</p>
-				<a class="button" href="#projects">向下看看 <span aria-hidden="true">↓</span></a>
+				<a class="button" href="#projects">向下看看 <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -65,7 +64,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 			<div class="home-about__grid">
 				<div class="home-about__statement" data-reveal>
 					<p class="display">GOOD<br /><span>IDEAS</span><br />NEED<br />A SHAPE.</p>
-					<span class="home-about__doodle script" aria-hidden="true">that feels right →</span>
+					<span class="home-about__doodle script" aria-hidden="true">that feels right <ArrowRight class="icon" size={25} stroke-width={2.2} /></span>
 				</div>
 				<div class="home-about__copy paper-panel" data-reveal>
 					<p class="eyebrow">你好，我是 {siteConfig.identity.name}</p>
@@ -81,7 +80,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 						</div>
 					</dl>
 					{siteConfig.identity.isPlaceholder && (
-						<p class="placeholder-note">✎ 这是可替换的示例资料，内容集中在 site.ts 中。</p>
+						<p class="placeholder-note"><Pencil class="icon" size={15} stroke-width={2.5} /> 这是可替换的示例资料，内容集中在 site.ts 中。</p>
 					)}
 				</div>
 			</div>
@@ -95,7 +94,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{projects.map((project, index) => <ProjectCard project={project} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button button--ink" href="/projects/">查看全部项目 <span aria-hidden="true">↗</span></a>
+				<a class="button button--ink" href="/projects/">查看全部项目 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -127,7 +126,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 							</ul>
 						</div>
 					))}
-					<a class="button" href="/resume/">打开完整简历 <span aria-hidden="true">→</span></a>
+					<a class="button" href="/resume/">打开完整简历 <ArrowRight class="icon" size={16} stroke-width={2.5} /></a>
 				</aside>
 			</div>
 		</div>
@@ -140,7 +139,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{posts.map((post, index) => <BlogCard post={post} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button" href="/blog/">翻阅全部文章 <span aria-hidden="true">↗</span></a>
+				<a class="button" href="/blog/">翻阅全部文章 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -156,7 +155,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				<h3>{siteConfig.contact.heading}</h3>
 				<p>{siteConfig.contact.message}</p>
 				<a class="home-contact__email" href={`mailto:${siteConfig.contact.email}`}>
-					{siteConfig.contact.email} <span aria-hidden="true">↗</span>
+					{siteConfig.contact.email} <ArrowUpRight class="icon" size={18} stroke-width={2.4} />
 				</a>
 				<ul class="home-contact__socials" aria-label="社交链接">
 					{siteConfig.contact.socials.map((social) => (

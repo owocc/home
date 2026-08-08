@@ -98,12 +98,18 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 					frame = window.requestAnimationFrame(() => {
 						const x = event.clientX / window.innerWidth - 0.5;
 						const y = event.clientY / window.innerHeight - 0.5;
+						document.body.style.setProperty('--grid-shift-x', `${x * 18}px`);
+						document.body.style.setProperty('--grid-shift-y', `${y * 14}px`);
 						layers.forEach((layer) => {
 							const depth = Number(layer.dataset.parallax || 1);
 							layer.style.setProperty('--shift-x', `${x * depth * 10}px`);
 							layer.style.setProperty('--shift-y', `${y * depth * 8}px`);
 						});
 					});
+				}, { passive: true });
+				window.addEventListener('pointerleave', () => {
+					document.body.style.setProperty('--grid-shift-x', '0px');
+					document.body.style.setProperty('--grid-shift-y', '0px');
 				}, { passive: true });
 			}
 		</script>

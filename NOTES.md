@@ -11,7 +11,7 @@
 - 未复制参考图中的品牌、作者姓名、Adobe 图标、水印或具体文字排版。
 - 参考图只用于理解视觉语气和构图节奏，不作为可直接复用的页面资产。
 - 角色素材根据用户自绘人物的深色蓬松短发、暖棕肤色、大眼、红晕、耳机和黑衣等特征重新创作。
-- `hero-peek.png`、`mascot-bust.png` 与 `paper-texture.webp` 均为本项目原创生成素材。
+- `hero-peek.png`、`mascot-bust.png`、`hero/` 角色状态素材与 `paper-texture.webp` 均为本项目原创生成素材。
 - 装饰性方格、标签、色块、字符贴纸与硬阴影由本站 CSS 原创建构。
 
 ## 技术栈与运行方式
@@ -42,7 +42,7 @@
 | 邮箱和社交链接 | `src/data/site.ts` 的 `contact` | 首页联系区与简历联系区 |
 | 项目 | `src/content/projects/*.md` | 首页精选、项目列表与详情页 |
 | 博客文章 | `src/content/blog/*.md` | 首页最新文章、博客列表与详情页 |
-| 首页角色 | `src/assets/images/hero-peek.png` | 首页 Hero |
+| 首页角色 | `src/components/HeroCharacter.astro` + `src/assets/images/hero/` | 首页 Hero、表情状态与鼠标跟随眼球 |
 | 简历角色 | `src/assets/images/mascot-bust.png` | 简历简介区 |
 | 纸张纹理 | `src/assets/images/paper-texture.webp` | 全站背景 |
 | 色彩、排版和响应式规则 | `src/styles/global.css` | 全站视觉系统 |

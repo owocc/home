@@ -1,0 +1,143 @@
+---
+import heroCurious from '../assets/images/hero/hero-curious.webp';
+import heroIdea from '../assets/images/hero/hero-idea.webp';
+import heroThinking from '../assets/images/hero/hero-thinking.webp';
+import heroEyeLeft from '../assets/images/hero/hero-eye-left.png';
+import heroEyeRight from '../assets/images/hero/hero-eye-right.png';
+
+const states = [
+	{ name: 'thinking', asset: heroThinking },
+	{ name: 'curious', asset: heroCurious },
+	{ name: 'idea', asset: heroIdea },
+];
+---
+
+<button
+	class="home-hero__character"
+	type="button"
+	data-parallax="0.55"
+	data-hero-character
+	data-character-state="thinking"
+	aria-label="角色正在托腮思考，点击进入灵感状态"
+>
+	<span class="home-hero__character-art" aria-hidden="true">
+		{states.map(({ name, asset }) => (
+			<span class="home-hero__character-state" data-hero-state={name}>
+				<img src={asset.src} alt="" width={asset.width} height={asset.height} draggable="false" />
+			</span>
+		))}
+
+		<span class="home-hero__eye home-hero__eye--left" data-hero-eye="left">
+			<img src={heroEyeLeft.src} alt="" width={heroEyeLeft.width} height={heroEyeLeft.height} draggable="false" />
+		</span>
+		<span class="home-hero__eye home-hero__eye--right" data-hero-eye="right">
+			<img src={heroEyeRight.src} alt="" width={heroEyeRight.width} height={heroEyeRight.height} draggable="false" />
+		</span>
+	</span>
+</button>
+
+<script>
+	const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+	const finePointer = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 800px)');
+
+	document.querySelectorAll<HTMLElement>('[data-hero-character]').forEach((character) => {
+		const eyes = Array.from(character.querySelectorAll<HTMLElement>('[data-hero-eye]'));
+		let frame = 0;
+		let ideaTimer = 0;
+		let blinkTimer = 0;
+		let blinkEndTimer = 0;
+		let isHovering = false;
+		let isFocused = false;
+
+		const setState = (state: 'thinking' | 'curious' | 'idea') => {
+			character.dataset.characterState = state;
+			character.setAttribute(
+				'aria-label',
+				state === 'idea' ? '角色灵感闪现' : state === 'curious' ? '角色注意到你的指针，点击进入灵感状态' : '角色正在托腮思考，点击进入灵感状态',
+			);
+		};
+
+		const restoreState = () => {
+			if (character.dataset.characterState === 'idea') return;
+			setState(isHovering || isFocused ? 'curious' : 'thinking');
+		};
+
+		const resetGaze = () => {
+			eyes.forEach((eye) => {
+				eye.style.setProperty('--eye-shift-x', '0px');
+				eye.style.setProperty('--eye-shift-y', '0px');
+			});
+		};
+
+		const updateGaze = (clientX: number, clientY: number) => {
+			if (!finePointer.matches || reduceMotion.matches) return;
+			const bounds = character.getBoundingClientRect();
+			const x = clamp((clientX - (bounds.left + bounds.width / 2)) / (bounds.width / 2), -1, 1);
+			const y = clamp((clientY - (bounds.top + bounds.height * 0.44)) / (bounds.height * 0.56), -1, 1);
+
+			eyes.forEach((eye) => {
+				const depth = eye.dataset.heroEye === 'right' ? 0.82 : 1;
+				eye.style.setProperty('--eye-shift-x', `${x * 10 * depth}px`);
+				eye.style.setProperty('--eye-shift-y', `${y * 7 * depth}px`);
+			});
+		};
+
+		const blink = () => {
+			if (reduceMotion.matches || document.hidden) {
+				scheduleBlink();
+				return;
+			}
+			character.dataset.blinking = 'true';
+			window.clearTimeout(blinkEndTimer);
+			blinkEndTimer = window.setTimeout(() => {
+				delete character.dataset.blinking;
+				scheduleBlink();
+			}, 140);
+		};
+
+		const scheduleBlink = () => {
+			window.clearTimeout(blinkTimer);
+			if (reduceMotion.matches) return;
+			blinkTimer = window.setTimeout(blink, 4000 + Math.random() * 2500);
+		};
+
+		const activateIdea = () => {
+			setState('idea');
+			window.clearTimeout(ideaTimer);
+			ideaTimer = window.setTimeout(restoreState, 1100);
+		};
+
+		character.addEventListener('pointerenter', () => {
+			isHovering = true;
+			if (character.dataset.characterState !== 'idea') setState('curious');
+		});
+		character.addEventListener('pointerleave', () => {
+			isHovering = false;
+			restoreState();
+		});
+		character.addEventListener('focus', () => {
+			isFocused = true;
+			if (character.dataset.characterState !== 'idea') setState('curious');
+		});
+		character.addEventListener('blur', () => {
+			isFocused = false;
+			restoreState();
+		});
+		character.addEventListener('click', activateIdea);
+
+		window.addEventListener('pointermove', (event) => {
+			window.cancelAnimationFrame(frame);
+			frame = window.requestAnimationFrame(() => updateGaze(event.clientX, event.clientY));
+		}, { passive: true });
+		window.addEventListener('pointerleave', resetGaze, { passive: true });
+		window.addEventListener('pagehide', () => {
+			window.cancelAnimationFrame(frame);
+			window.clearTimeout(ideaTimer);
+			window.clearTimeout(blinkTimer);
+			window.clearTimeout(blinkEndTimer);
+		});
+
+		scheduleBlink();
+	});
+</script>

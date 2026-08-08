@@ -1,5 +1,6 @@
 ---
 import siteConfig from '../data/site';
+import Sparkles from '@lucide/astro/icons/sparkles';
 
 interface Props {
 	currentPath: string;
@@ -16,7 +17,7 @@ const isCurrent = (href: string) => {
 <header class="site-header">
 	<div class="site-header__inner shell">
 		<a class="site-brand" href="/" aria-label={`${siteConfig.identity.name}，返回首页`}>
-			<span class="site-brand__mark" aria-hidden="true">✦</span>
+			<span class="site-brand__mark" aria-hidden="true"><Sparkles class="icon" size={22} stroke-width={2.4} /></span>
 			<span>
 				<strong>{siteConfig.identity.name}</strong>
 				<small>{siteConfig.identity.role}</small>

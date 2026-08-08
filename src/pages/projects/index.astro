@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
 import ProjectCard from '../../components/ProjectCard.astro';
 import Layout from '../../layouts/Layout.astro';
 
@@ -36,7 +37,7 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
 		<div class="archive-cta__inner shell" data-reveal>
 			<p class="script">more ideas are coming...</p>
 			<h2>想看看创作过程？</h2>
-			<a class="button button--ink" href="/blog/">去读创作笔记 <span aria-hidden="true">↗</span></a>
+			<a class="button button--ink" href="/blog/">去读创作笔记 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</section>
 </Layout>

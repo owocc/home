@@ -1,5 +1,6 @@
 ---
 import siteConfig from '../data/site';
+import ArrowUp from '@lucide/astro/icons/arrow-up';
 ---
 
 <footer class="site-footer">
@@ -11,7 +12,7 @@ import siteConfig from '../data/site';
 		<div class="site-footer__meta">
 			<p>© {new Date().getFullYear()} {siteConfig.identity.name}</p>
 			<p>用 Astro、纸张质感与一点好奇心制作。</p>
-			<a href="#main-content">回到页首 ↑</a>
+			<a href="#main-content">回到页首 <ArrowUp class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</div>
 </footer>

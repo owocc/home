@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
 
 interface Props {
 	post: CollectionEntry<'blog'>;
@@ -26,6 +27,6 @@ const date = new Intl.DateTimeFormat('zh-CN', {
 			<h3>{post.data.title}</h3>
 			<p>{post.data.description}</p>
 		</div>
-		<span class="blog-card__arrow" aria-hidden="true">↗</span>
+		<span class="blog-card__arrow" aria-hidden="true"><ArrowUpRight class="icon" size={42} stroke-width={2.2} /></span>
 	</a>
 </article>
