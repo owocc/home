@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "纸张拼贴风个人作品集",
+    "language": "zh-CN",
+    "complexity": "L2",
+    "mode": "内容爆改 / 视觉语言提炼",
+    "output": "Astro 7 静态多路由个人网站"
+  },
+  "reference": {
+    "sourceType": "用户提供的海报风格截图与用户自绘人物图",
+    "sourceUrlAvailability": "无原站 URL",
+    "sourceCodeAvailability": "无原站源码",
+    "retainedPrinciples": [
+      "纸张拼贴质感",
+      "粗黑描边与硬阴影",
+      "橙黄蓝紫撞色",
+      "超大块面标题",
+      "手写英文点缀"
+    ],
+    "excludedElements": [
+      "参考图品牌",
+      "参考图作者姓名",
+      "Adobe 图标",
+      "参考图水印",
+      "参考图具体版式复制"
+    ],
+    "originalAssets": [
+      "src/assets/images/hero-peek.png",
+      "src/assets/images/mascot-bust.png",
+      "src/assets/images/paper-texture.webp"
+    ]
+  },
+  "colors": {
+    "paper": "#f4efe5",
+    "paperDeep": "#e9dfcf",
+    "paperLight": "#fffdf7",
+    "ink": "#111111",
+    "muted": "#5e5a54",
+    "orange": "#ff5a1f",
+    "yellow": "#f7b733",
+    "blue": "#2f9ed8",
+    "purple": "#8a6595",
+    "usage": "米白作为大面积纸张背景，黑色承担文字和轮廓，橙黄蓝紫用于区块、卡片主题与强调"
+  },
+  "typography": {
+    "bodyStack": "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif",
+    "displayStack": "Impact, Haettenschweiler, Arial Narrow Bold, Arial Narrow, sans-serif",
+    "scriptStack": "Bradley Hand, Segoe Print, Comic Sans MS, cursive",
+    "monoStack": "SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace",
+    "strategy": "中文信息使用系统无衬线字体，英文展示标题使用窄体粗黑 fallback，手写字体仅作装饰，元数据使用等宽字体",
+    "externalFonts": false
+  },
+  "spacing": {
+    "baseUnitPx": 4,
+    "scalePx": [4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128],
+    "sectionPadding": "clamp(5rem, 10vw, 8.5rem)",
+    "compactSectionPadding": "clamp(3.5rem, 7vw, 6rem)",
+    "mobileShellGutterPx": 12,
+    "tabletShellGutterPx": 16,
+    "desktopShellGutterPx": 20
+  },
+  "layout": {
+    "maxContentWidthPx": 1180,
+    "shellRule": "min(1180px, calc(100% - 40px))",
+    "primaryBreakpointsPx": [620, 900],
+    "desktopProjectColumns": 3,
+    "tabletProjectColumns": 2,
+    "mobileProjectColumns": 1,
+    "contentFlow": "静态多页自然文档流，宽屏分栏，窄屏单列",
+    "minimumViewportWidthPx": 320
+  },
+  "surface": {
+    "border": "3px solid #111111",
+    "smallBorder": "2px solid #111111",
+    "hardShadow": "7px 7px 0 #111111",
+    "smallHardShadow": "4px 4px 0 #111111",
+    "paperGrid": "24px × 24px 低对比度双向网格叠加原创纸张纹理",
+    "cornerStyle": "以直角纸片为主，贴纸和角色装饰局部使用圆角或圆形",
+    "tiltRange": "关键内容保持水平，装饰和部分卡片约 -8deg 至 8deg"
+  },
+  "components": [
+    {
+      "name": "Header",
+      "purpose": "粘性品牌栏、主导航和当前路由状态"
+    },
+    {
+      "name": "Footer",
+      "purpose": "高对比收尾标语、版权信息和返回页首入口"
+    },
+    {
+      "name": "SectionHeading",
+      "purpose": "编号、双语 eyebrow、超大章节标题与横线"
+    },
+    {
+      "name": "ProjectCard",
+      "purpose": "主题色项目封面、角色、摘要、标签与案例入口"
+    },
+    {
+      "name": "BlogCard",
+      "purpose": "发布日期、标签、摘要和文章入口"
+    },
+    {
+      "name": "PaperPanel",
+      "purpose": "带粗边框与硬阴影的纸张内容容器"
+    },
+    {
+      "name": "PosterLabel",
+      "purpose": "橙色或主题色块上的海报式强调文字"
+    },
+    {
+      "name": "CaseNavigation",
+      "purpose": "项目与文章详情的前后导航及归档返回"
+    }
+  ],
+  "interaction": {
+    "implementation": "lightweight CSS + vanilla JavaScript",
+    "reveal": "IntersectionObserver 驱动的一次性淡入与 24px 上移动画；无 JavaScript 时内容默认可见",
+    "parallax": "仅在宽度至少 800px、支持 hover 且精确指针的设备上启用轻量 pointermove 视差",
+    "hoverFeedback": "卡片与按钮使用短距离位移、硬阴影增减和主题色变化",
+    "reducedMotion": "prefers-reduced-motion: reduce 时关闭 reveal 位移、视差、平滑滚动与非必要过渡",
+    "touchDependency": "触屏操作不依赖 hover",
+    "webgl": false,
+    "particles": false,
+    "customCursor": false
+  },
+  "contentArchitecture": {
+    "identitySource": "src/data/site.ts",
+    "projectSource": "src/content/projects/*.md",
+    "blogSource": "src/content/blog/*.md",
+    "schemaSource": "src/content.config.ts",
+    "draftPolicy": "draft 为 true 的条目不进入首页、列表页或 getStaticPaths，不生成公开详情路由",
+    "projectOrder": "order 升序",
+    "blogOrder": "publishedAt 逆序"
+  },
+  "accessibility": {
+    "documentLanguage": "zh-CN",
+    "navigation": "语义 nav、aria-label 和 aria-current",
+    "keyboard": "全站可见 focus-visible 轮廓与跳到主要内容链接",
+    "images": "角色图片提供中文替代文本与固有宽高",
+    "motion": "完整支持系统减少动态效果设置",
+    "responsiveTargetsPx": [390, 768, 1440]
+  },
+  "technicalConstraints": {
+    "framework": "Astro 7.1.5",
+    "rendering": "静态输出",
+    "content": "Astro Content Layer + Markdown + Zod",
+    "styling": "单一全局 CSS 视觉系统",
+    "clientRuntime": "少量原生 JavaScript",
+    "react": false,
+    "tailwind": false,
+    "webgl": false,
+    "backend": false
+  }
+}

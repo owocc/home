@@ -1,0 +1,112 @@
+---
+import mascotBust from '../assets/images/mascot-bust.png';
+import SectionHeading from '../components/SectionHeading.astro';
+import siteConfig from '../data/site';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="简历" description={`${siteConfig.identity.name}的个人简介、工作经历、技能与教育背景。`}>
+	<header class="page-hero page-hero--resume">
+		<div class="page-hero__inner shell">
+			<span class="page-hero__stamp page-hero__stamp--yellow" aria-hidden="true">CV / 2026</span>
+			<p class="eyebrow">RESUME / 个人简历</p>
+			<h1 class="display">IDEAS,<br /><span class="poster-label">DESIGN</span> & CODE.</h1>
+			<p class="page-hero__lede">把内容、视觉和前端实现放进同一条创作链路，让每个想法都找到清楚而有性格的表达。</p>
+		</div>
+	</header>
+
+	<section class="section resume-profile" aria-labelledby="profile-title">
+		<div class="resume-profile__grid shell">
+			<div class="resume-portrait" data-reveal>
+				<div class="resume-portrait__backdrop" aria-hidden="true"></div>
+				<img
+					src={mascotBust.src}
+					width={mascotBust.width}
+					height={mascotBust.height}
+					alt="戴着耳机、穿黑色上衣的卡通人物半身像"
+					loading="eager"
+				/>
+				<span class="resume-portrait__label script" aria-hidden="true">that's me!</span>
+			</div>
+			<div class="resume-profile__copy" data-reveal>
+				<p class="eyebrow">PROFILE / 自我介绍</p>
+				<h2 id="profile-title">你好，我是 {siteConfig.identity.name}。</h2>
+				<p class="resume-profile__lead">{siteConfig.identity.intro}</p>
+				{siteConfig.identity.bio.map((paragraph) => <p>{paragraph}</p>)}
+				<dl class="resume-profile__facts">
+					<div><dt>角色</dt><dd>{siteConfig.identity.role}</dd></div>
+					<div><dt>所在地</dt><dd>{siteConfig.identity.location}</dd></div>
+					<div><dt>状态</dt><dd>{siteConfig.identity.availability}</dd></div>
+				</dl>
+			</div>
+		</div>
+	</section>
+
+	<section class="section resume-experience" aria-labelledby="experience-title">
+		<div class="shell">
+			<SectionHeading id="experience-title" eyebrow="EXPERIENCE / 经历" title="一路做过的事" number="01" />
+			<div class="resume-timeline">
+				{siteConfig.experience.map((item, index) => (
+					<article class="resume-entry" data-reveal>
+						<div class="resume-entry__rail" aria-hidden="true">
+							<span class="display">{String(index + 1).padStart(2, '0')}</span>
+						</div>
+						<div class="resume-entry__content">
+							<p class="eyebrow">{item.period}</p>
+							<h3>{item.role}</h3>
+							<p class="resume-entry__org">{item.organization}</p>
+							<p>{item.summary}</p>
+							<ul>
+								{item.highlights.map((highlight) => <li>{highlight}</li>)}
+							</ul>
+						</div>
+					</article>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<section class="section resume-toolbox" aria-labelledby="skills-title">
+		<div class="shell">
+			<SectionHeading id="skills-title" eyebrow="TOOLBOX / 技能" title="常用的方法与工具" number="02" />
+			<div class="resume-toolbox__grid">
+				{siteConfig.skills.map((group, index) => (
+					<article class="toolbox-card" data-reveal>
+						<span class="toolbox-card__index display" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+						<h3>{group.label}</h3>
+						<ul>
+							{group.items.map((item) => <li>{item}</li>)}
+						</ul>
+					</article>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<section class="section resume-education" aria-labelledby="education-title">
+		<div class="shell">
+			<SectionHeading id="education-title" eyebrow="EDUCATION / 教育" title="学习经历" number="03" />
+			<div class="resume-education__list">
+				{siteConfig.education.map((item) => (
+					<article class="education-card paper-panel" data-reveal>
+						<p class="eyebrow">{item.period}</p>
+						<h3>{item.program}</h3>
+						<p class="education-card__school">{item.institution}</p>
+						<p>{item.description}</p>
+					</article>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<section class="resume-contact">
+		<div class="resume-contact__inner shell" data-reveal>
+			<div>
+				<p class="script">let's work together!</p>
+				<h2>{siteConfig.contact.heading}</h2>
+				<p>{siteConfig.contact.message}</p>
+			</div>
+			<a class="button button--ink" href={`mailto:${siteConfig.contact.email}`}>发送邮件 <span aria-hidden="true">↗</span></a>
+		</div>
+	</section>
+</Layout>

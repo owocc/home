@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="页面没有找到" description="你访问的页面不存在，返回首页继续浏览项目与文章。" noIndex>
+	<section class="not-found" aria-labelledby="not-found-title">
+		<div class="not-found__inner shell">
+			<div class="not-found__number display" aria-hidden="true">404</div>
+			<div class="not-found__card" data-reveal>
+				<p class="script">oops, wrong turn!</p>
+				<h1 id="not-found-title">这张纸不在这里。</h1>
+				<p>可能是链接写错了，也可能这个页面已经被收进抽屉。你可以回到首页，或者继续浏览项目档案。</p>
+				<div class="button-row">
+					<a class="button button--ink" href="/">返回首页</a>
+					<a class="button" href="/projects/">查看项目</a>
+				</div>
+			</div>
+			<span class="not-found__sticker" aria-hidden="true">?</span>
+		</div>
+	</section>
+</Layout>

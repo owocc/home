@@ -1,50 +1,111 @@
 ---
+import siteConfig from '../data/site';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
 interface Props {
-	title: string;
+	title?: string;
+	description?: string;
+	ogImage?: string;
+	noIndex?: boolean;
 }
 
-const { title } = Astro.props;
+const {
+	title = siteConfig.title,
+	description = siteConfig.description,
+	ogImage = '/og.png',
+	noIndex = false,
+} = Astro.props;
+const pageTitle = title === siteConfig.title ? title : `${title}｜${siteConfig.identity.name}`;
+const currentPath = Astro.url.pathname;
+const resolvedOgImage = ogImage
+	? Astro.site
+		? new URL(ogImage, Astro.site).href
+		: ogImage
+	: undefined;
+const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefined;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={siteConfig.language}>
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Astro description" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content={description} />
+		<meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
+		<meta name="theme-color" content="#f4efe5" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="zh_CN" />
+		<meta property="og:site_name" content={siteConfig.title} />
+		<meta property="og:title" content={pageTitle} />
+		<meta property="og:description" content={description} />
+		{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+		{resolvedOgImage && (
+			<>
+				<meta property="og:image" content={resolvedOgImage} />
+				<meta property="og:image:width" content="1734" />
+				<meta property="og:image:height" content="907" />
+				<meta property="og:image:alt" content="纸张拼贴风个人作品集海报，卡通角色从 PORTFOLIO 标题后探出头" />
+				<meta name="twitter:image" content={resolvedOgImage} />
+				<meta name="twitter:image:alt" content="纸张拼贴风个人作品集海报，卡通角色从 PORTFOLIO 标题后探出头" />
+			</>
+		)}
+		<meta name="twitter:card" content={resolvedOgImage ? 'summary_large_image' : 'summary'} />
+		<meta name="twitter:title" content={pageTitle} />
+		<meta name="twitter:description" content={description} />
+		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+		<title>{pageTitle}</title>
+		<script is:inline>document.documentElement.classList.add('js');</script>
 	</head>
 	<body>
-		<slot />
+		<a class="skip-link" href="#main-content">跳到主要内容</a>
+		<Header currentPath={currentPath} />
+
+		<main id="main-content" tabindex="-1">
+			<slot />
+		</main>
+
+		<Footer />
+
+		<script>
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+			const revealItems = document.querySelectorAll<HTMLElement>('[data-reveal]');
+
+			if (reduceMotion.matches || !('IntersectionObserver' in window)) {
+				revealItems.forEach((item) => item.classList.add('is-visible'));
+			} else {
+				const observer = new IntersectionObserver(
+					(entries) => {
+						entries.forEach((entry) => {
+							if (!entry.isIntersecting) return;
+							entry.target.classList.add('is-visible');
+							observer.unobserve(entry.target);
+						});
+					},
+					{ threshold: 0.12, rootMargin: '0px 0px -4% 0px' },
+				);
+				revealItems.forEach((item) => observer.observe(item));
+			}
+
+			const canParallax = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 800px)');
+			if (canParallax.matches && !reduceMotion.matches) {
+				const layers = document.querySelectorAll<HTMLElement>('[data-parallax]');
+				let frame = 0;
+				window.addEventListener('pointermove', (event) => {
+					window.cancelAnimationFrame(frame);
+					frame = window.requestAnimationFrame(() => {
+						const x = event.clientX / window.innerWidth - 0.5;
+						const y = event.clientY / window.innerHeight - 0.5;
+						layers.forEach((layer) => {
+							const depth = Number(layer.dataset.parallax || 1);
+							layer.style.setProperty('--shift-x', `${x * depth * 10}px`);
+							layer.style.setProperty('--shift-y', `${y * depth * 8}px`);
+						});
+					});
+				}, { passive: true });
+			}
+		</script>
 	</body>
 </html>
-<style is:global>
-	:root {
-		--accent: 136, 58, 234;
-		--accent-light: 224, 204, 250;
-		--accent-dark: 49, 10, 101;
-		--accent-gradient: linear-gradient(
-			45deg,
-			rgb(var(--accent)),
-			rgb(var(--accent-light)) 30%,
-			white 60%
-		);
-	}
-	html {
-		font-family: system-ui, sans-serif;
-		background: #13151a;
-	}
-	code {
-		font-family:
-			Menlo,
-			Monaco,
-			Lucida Console,
-			Liberation Mono,
-			DejaVu Sans Mono,
-			Bitstream Vera Sans Mono,
-			Courier New,
-			monospace;
-	}
-</style>

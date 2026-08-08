@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+	post: CollectionEntry<'blog'>;
+	index: number;
+}
+
+const { post, index } = Astro.props;
+const date = new Intl.DateTimeFormat('zh-CN', {
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit',
+}).format(post.data.publishedAt);
+---
+
+<article class="blog-card" data-reveal>
+	<a href={`/blog/${post.id}/`}>
+		<div class="blog-card__index display" aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
+		<div class="blog-card__content">
+			<div class="blog-card__meta">
+				<time datetime={post.data.publishedAt.toISOString()}>{date}</time>
+				<span>·</span>
+				<span>{post.data.tags[0]}</span>
+			</div>
+			<h3>{post.data.title}</h3>
+			<p>{post.data.description}</p>
+		</div>
+		<span class="blog-card__arrow" aria-hidden="true">↗</span>
+	</a>
+</article>

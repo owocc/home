@@ -1,0 +1,94 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+interface Props {
+	post: CollectionEntry<'blog'>;
+	previous?: CollectionEntry<'blog'>;
+	next?: CollectionEntry<'blog'>;
+}
+
+export async function getStaticPaths() {
+	const posts = (await getCollection('blog', ({ data }) => !data.draft))
+		.sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+
+	return posts.map((post, index) => ({
+		params: { id: post.id },
+		props: {
+			post,
+			previous: posts[index - 1],
+			next: posts[index + 1],
+		},
+	}));
+}
+
+const { post, previous, next } = Astro.props;
+const { Content } = await render(post);
+const dateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<Layout title={post.data.title} description={post.data.description}>
+	<header class="detail-header blog-detail-header">
+		<div class="shell">
+			<a class="detail-header__back" href="/blog/"><span aria-hidden="true">←</span>&nbsp; 返回文章列表</a>
+			<div class="detail-header__grid">
+				<div>
+					<p class="eyebrow">FIELD NOTE / 创作笔记</p>
+					<h1 class="display">{post.data.title}</h1>
+					<p class="detail-header__summary">{post.data.description}</p>
+				</div>
+				<aside class="detail-meta" aria-label="文章资料">
+					<dl>
+						<div>
+							<dt>发布于</dt>
+							<dd><time datetime={post.data.publishedAt.toISOString()}>{dateFormat.format(post.data.publishedAt)}</time></dd>
+						</div>
+						{post.data.updatedAt && (
+							<div>
+								<dt>更新于</dt>
+								<dd><time datetime={post.data.updatedAt.toISOString()}>{dateFormat.format(post.data.updatedAt)}</time></dd>
+							</div>
+						)}
+						<div><dt>标签</dt><dd>{post.data.tags.join(' / ')}</dd></div>
+					</dl>
+				</aside>
+			</div>
+		</div>
+	</header>
+
+	<div class="article-shell shell">
+		<article class="prose">
+			<Content />
+		</article>
+		<aside class="article-aside" aria-label="文章补充信息">
+			<div class="article-aside__note article-aside__note--blog">
+				<span class="script">margin note</span>
+				<p>这里收录的是过程中的判断和未完成想法，欢迎把它当作一页公开的工作笔记。</p>
+			</div>
+			<ul class="tag-list detail-tag-list" aria-label="文章标签">
+				{post.data.tags.map((tag) => <li>{tag}</li>)}
+			</ul>
+		</aside>
+	</div>
+
+	<nav class="case-nav shell" aria-label="文章翻页">
+		{previous ? (
+			<a class="case-nav__item case-nav__item--previous" href={`/blog/${previous.id}/`}>
+				<span class="eyebrow">← 更新一篇</span>
+				<strong>{previous.data.title}</strong>
+			</a>
+		) : <span class="case-nav__empty" aria-hidden="true"></span>}
+		{next ? (
+			<a class="case-nav__item case-nav__item--next" href={`/blog/${next.id}/`}>
+				<span class="eyebrow">更早一篇 →</span>
+				<strong>{next.data.title}</strong>
+			</a>
+		) : (
+			<a class="case-nav__item case-nav__item--next" href="/blog/">
+				<span class="eyebrow">回到笔记 →</span>
+				<strong>全部文章</strong>
+			</a>
+		)}
+	</nav>
+</Layout>

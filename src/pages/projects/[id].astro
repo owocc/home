@@ -1,0 +1,91 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+interface Props {
+	project: CollectionEntry<'projects'>;
+	previous?: CollectionEntry<'projects'>;
+	next?: CollectionEntry<'projects'>;
+}
+
+export async function getStaticPaths() {
+	const projects = (await getCollection('projects', ({ data }) => !data.draft))
+		.sort((a, b) => a.data.order - b.data.order);
+
+	return projects.map((project, index) => ({
+		params: { id: project.id },
+		props: {
+			project,
+			previous: projects[index - 1],
+			next: projects[index + 1],
+		},
+	}));
+}
+
+const { project, previous, next } = Astro.props;
+const { Content } = await render(project);
+---
+
+<Layout title={project.data.title} description={project.data.summary}>
+	<header class:list={['detail-header', 'project-detail-header', `theme-${project.data.theme}`]}>
+		<div class="shell">
+			<a class="detail-header__back" href="/projects/"><span aria-hidden="true">←</span>&nbsp; 返回项目列表</a>
+			<div class="detail-header__grid">
+				<div>
+					<p class="eyebrow">PROJECT CASE / 项目案例</p>
+					<h1 class="display">{project.data.title}</h1>
+					<p class="detail-header__summary">{project.data.summary}</p>
+				</div>
+				<aside class="detail-meta" aria-label="项目资料">
+					<dl>
+						<div><dt>年份</dt><dd>{project.data.year}</dd></div>
+						<div><dt>角色</dt><dd>{project.data.role}</dd></div>
+						<div><dt>关键词</dt><dd>{project.data.tags.join(' / ')}</dd></div>
+					</dl>
+				</aside>
+			</div>
+		</div>
+	</header>
+
+	<div class="article-shell shell">
+		<article class="prose">
+			<Content />
+		</article>
+		<aside class="article-aside" aria-label="项目补充信息">
+			<div class="article-aside__note">
+				<span class="script">project notes</span>
+				<p>这是一个关于选择与过程的记录，而不只是最终画面的展示。</p>
+			</div>
+			<ul class="tag-list detail-tag-list" aria-label="项目标签">
+				{project.data.tags.map((tag) => <li>{tag}</li>)}
+			</ul>
+			{project.data.links && (
+				<div class="detail-links" aria-label="项目外部链接">
+					{project.data.links.live && <a href={project.data.links.live}>访问项目 <span aria-hidden="true">↗</span></a>}
+					{project.data.links.source && <a href={project.data.links.source}>查看源码 <span aria-hidden="true">↗</span></a>}
+				</div>
+			)}
+		</aside>
+	</div>
+
+	<nav class="case-nav shell" aria-label="项目翻页">
+		{previous ? (
+			<a class="case-nav__item case-nav__item--previous" href={`/projects/${previous.id}/`}>
+				<span class="eyebrow">← 上一个项目</span>
+				<strong>{previous.data.title}</strong>
+			</a>
+		) : <span class="case-nav__empty" aria-hidden="true"></span>}
+		{next ? (
+			<a class="case-nav__item case-nav__item--next" href={`/projects/${next.id}/`}>
+				<span class="eyebrow">下一个项目 →</span>
+				<strong>{next.data.title}</strong>
+			</a>
+		) : (
+			<a class="case-nav__item case-nav__item--next" href="/projects/">
+				<span class="eyebrow">回到档案 →</span>
+				<strong>全部项目</strong>
+			</a>
+		)}
+	</nav>
+</Layout>

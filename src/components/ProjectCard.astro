@@ -1,0 +1,30 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+	project: CollectionEntry<'projects'>;
+	index: number;
+}
+
+const { project, index } = Astro.props;
+const number = String(index + 1).padStart(2, '0');
+---
+
+<article class:list={['project-card', `theme-${project.data.theme}`]} data-reveal>
+	<a class="project-card__link" href={`/projects/${project.id}/`} aria-label={`查看项目：${project.data.title}`}>
+		<div class="project-card__visual" aria-hidden="true">
+			<span class="project-card__number display">{number}</span>
+			<span class="project-card__glyph display">{index % 2 === 0 ? '{ }' : '</>'}</span>
+			<span class="project-card__year">{project.data.year}</span>
+		</div>
+		<div class="project-card__body">
+			<p class="eyebrow">{project.data.role}</p>
+			<h3>{project.data.title}</h3>
+			<p>{project.data.summary}</p>
+			<ul class="tag-list" aria-label="项目标签">
+				{project.data.tags.map((tag) => <li>{tag}</li>)}
+			</ul>
+			<span class="text-link">阅读案例 <span aria-hidden="true">↗</span></span>
+		</div>
+	</a>
+</article>
