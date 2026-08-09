@@ -18,6 +18,7 @@
     "@astrojs/check": "0.9.10",
     "@lucide/astro": "^1.30.0",
     "astro": "7.1.5",
+    "pixi.js": "8.19.0",
     "typescript": "^5.6.2"
   }
 }

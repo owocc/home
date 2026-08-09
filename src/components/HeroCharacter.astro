@@ -1,15 +1,9 @@
 ---
-import heroCurious from '../assets/images/hero/hero-curious.webp';
-import heroIdea from '../assets/images/hero/hero-idea.webp';
 import heroThinking from '../assets/images/hero/hero-thinking.webp';
-import heroEyeLeft from '../assets/images/hero/hero-eye-left.png';
-import heroEyeRight from '../assets/images/hero/hero-eye-right.png';
+import heroIrisPupil from '../assets/images/hero/hero-iris-pupil.png';
+import heroEyeHighlight from '../assets/images/hero/hero-eye-highlight.png';
 
-const states = [
-	{ name: 'thinking', asset: heroThinking },
-	{ name: 'curious', asset: heroCurious },
-	{ name: 'idea', asset: heroIdea },
-];
+const canvasSize = 1254;
 ---
 
 <button
@@ -18,126 +12,733 @@ const states = [
 	data-parallax="0.55"
 	data-hero-character
 	data-character-state="thinking"
-	aria-label="角色正在托腮思考，点击进入灵感状态"
+	aria-label="角色正在托腮思考，眼睛会跟随指针移动"
 >
 	<span class="home-hero__character-art" aria-hidden="true">
-		{states.map(({ name, asset }) => (
-			<span class="home-hero__character-state" data-hero-state={name}>
-				<img src={asset.src} alt="" width={asset.width} height={asset.height} draggable="false" />
-			</span>
-		))}
-
-		<span class="home-hero__eye home-hero__eye--left" data-hero-eye="left">
-			<img src={heroEyeLeft.src} alt="" width={heroEyeLeft.width} height={heroEyeLeft.height} draggable="false" />
-		</span>
-		<span class="home-hero__eye home-hero__eye--right" data-hero-eye="right">
-			<img src={heroEyeRight.src} alt="" width={heroEyeRight.width} height={heroEyeRight.height} draggable="false" />
-		</span>
+		<canvas
+			class="home-hero__character-canvas"
+			width={canvasSize}
+			height={canvasSize}
+			data-hero-canvas
+			data-state-src-thinking={heroThinking.src}
+			data-eye-iris-pupil-src={heroIrisPupil.src}
+			data-eye-highlight-src={heroEyeHighlight.src}
+			aria-hidden="true"
+		></canvas>
+		<img
+			class="home-hero__character-fallback"
+			src={heroThinking.src}
+			alt=""
+			width={heroThinking.width}
+			height={heroThinking.height}
+			draggable="false"
+		/>
 	</span>
 </button>
 
 <script>
+	const LOGICAL_SIZE = 1254;
+	// The character stays on one authored pose; only the eye and body motion are animated.
+	const stateNames = ['thinking'] as const;
+	type StateName = (typeof stateNames)[number];
+	type EyeSide = 'left' | 'right';
+
+	type EyeGeometry = {
+		side: EyeSide;
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+		depth: number;
+		maxX: number;
+		maxY: number;
+	};
+
+	type EyeSample = { x: number; top: number; bottom: number };
+
+	type EyeAsset = {
+		scleraCanvas: HTMLCanvasElement;
+		foregroundCanvas: HTMLCanvasElement;
+		mask: Uint8Array;
+		bounds: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number };
+		samples: EyeSample[];
+	};
+
+	type StateRig = {
+		baseCanvas: HTMLCanvasElement;
+		eyes: Record<EyeSide, EyeAsset>;
+	};
+
+	type EyeLayers = {
+		scleraCanvas: HTMLCanvasElement;
+		irisPupilCanvas: HTMLCanvasElement;
+		highlightCanvas: HTMLCanvasElement;
+		scleraTexture: import('pixi.js').Texture;
+		irisPupilTexture: import('pixi.js').Texture;
+		highlightTexture: import('pixi.js').Texture;
+		scleraSprite: import('pixi.js').Sprite;
+		irisPupilSprite: import('pixi.js').Sprite;
+		highlightSprite: import('pixi.js').Sprite;
+		foregroundSprite: import('pixi.js').Sprite;
+	};
+
+	type StateLayers = {
+		baseSprite: import('pixi.js').Sprite;
+		eyes: Record<EyeSide, EyeLayers>;
+	};
+
 	const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+	const randomBetween = (min: number, max: number) => min + Math.random() * (max - min);
+	const lerp = (from: number, to: number, amount: number) => from + (to - from) * amount;
+
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 	const finePointer = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 800px)');
 
-	document.querySelectorAll<HTMLElement>('[data-hero-character]').forEach((character) => {
-		const eyes = Array.from(character.querySelectorAll<HTMLElement>('[data-hero-eye]'));
-		let frame = 0;
-		let ideaTimer = 0;
-		let blinkTimer = 0;
-		let blinkEndTimer = 0;
-		let isHovering = false;
-		let isFocused = false;
+	const makeCanvas = (width: number, height: number) => {
+		const canvas = document.createElement('canvas');
+		canvas.width = width;
+		canvas.height = height;
+		return canvas;
+	};
 
-		const setState = (state: 'thinking' | 'curious' | 'idea') => {
-			character.dataset.characterState = state;
-			character.setAttribute(
-				'aria-label',
-				state === 'idea' ? '角色灵感闪现' : state === 'curious' ? '角色注意到你的指针，点击进入灵感状态' : '角色正在托腮思考，点击进入灵感状态',
-			);
+	const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+		const image = new Image();
+		image.decoding = 'async';
+		image.onload = () => resolve(image);
+		image.onerror = () => reject(new Error(`Unable to load hero image: ${src}`));
+		image.src = src;
+	});
+
+	const isScleraPixel = (pixels: Uint8ClampedArray, index: number) => {
+		const red = pixels[index];
+		const green = pixels[index + 1];
+		const blue = pixels[index + 2];
+		const alpha = pixels[index + 3];
+		return alpha > 120 && red > 215 && green > 215 && blue > 215 && Math.max(red, green, blue) - Math.min(red, green, blue) < 34;
+	};
+
+	const findLargestComponent = (candidate: Uint8Array, width: number) => {
+		const visited = new Uint8Array(candidate.length);
+		let largest: number[] = [];
+
+		for (let start = 0; start < candidate.length; start += 1) {
+			if (!candidate[start] || visited[start]) continue;
+			const component: number[] = [];
+			const stack = [start];
+			visited[start] = 1;
+
+			while (stack.length) {
+				const current = stack.pop();
+				if (current === undefined) continue;
+				component.push(current);
+				const x = current % width;
+				const y = Math.floor(current / width);
+				const neighbors = [current - 1, current + 1, current - width, current + width];
+
+				neighbors.forEach((neighbor) => {
+					if (neighbor < 0 || neighbor >= candidate.length || visited[neighbor] || !candidate[neighbor]) return;
+					const neighborX = neighbor % width;
+					const neighborY = Math.floor(neighbor / width);
+					if (Math.abs(neighborX - x) + Math.abs(neighborY - y) !== 1) return;
+					visited[neighbor] = 1;
+					stack.push(neighbor);
+				});
+			}
+
+			if (component.length > largest.length) largest = component;
+		}
+
+		return largest;
+	};
+
+	const deriveEyeAsset = (image: HTMLImageElement, eye: EyeGeometry): EyeAsset => {
+		const sourceCanvas = makeCanvas(eye.width, eye.height);
+		const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
+		if (!sourceContext) throw new Error(`Unable to create eye source canvas: ${eye.side}`);
+		sourceContext.drawImage(image, eye.x, eye.y, eye.width, eye.height, 0, 0, eye.width, eye.height);
+		const sourceData = sourceContext.getImageData(0, 0, eye.width, eye.height);
+		const candidate = new Uint8Array(eye.width * eye.height);
+
+		for (let index = 0; index < candidate.length; index += 1) {
+			if (isScleraPixel(sourceData.data, index * 4)) candidate[index] = 1;
+		}
+
+		let scleraPixels = findLargestComponent(candidate, eye.width);
+		if (scleraPixels.length < 40) {
+			scleraPixels = [];
+			const centerX = eye.width * 0.5;
+			const centerY = eye.height * 0.52;
+			const radiusX = eye.width * 0.39;
+			const radiusY = eye.height * 0.38;
+			for (let y = 0; y < eye.height; y += 1) {
+				for (let x = 0; x < eye.width; x += 1) {
+					const distance = Math.pow((x - centerX) / radiusX, 2) + Math.pow((y - centerY) / radiusY, 2);
+					if (distance <= 1) scleraPixels.push(y * eye.width + x);
+				}
+			}
+		}
+
+		const mask = new Uint8Array(eye.width * eye.height);
+		const scleraData = sourceContext.createImageData(eye.width, eye.height);
+		const foregroundData = sourceContext.createImageData(eye.width, eye.height);
+		let minX = eye.width;
+		let minY = eye.height;
+		let maxX = 0;
+		let maxY = 0;
+
+		scleraPixels.forEach((pixel) => {
+			mask[pixel] = 1;
+			const sourceIndex = pixel * 4;
+			scleraData.data[sourceIndex] = sourceData.data[sourceIndex];
+			scleraData.data[sourceIndex + 1] = sourceData.data[sourceIndex + 1];
+			scleraData.data[sourceIndex + 2] = sourceData.data[sourceIndex + 2];
+			scleraData.data[sourceIndex + 3] = sourceData.data[sourceIndex + 3];
+			const x = pixel % eye.width;
+			const y = Math.floor(pixel / eye.width);
+			minX = Math.min(minX, x);
+			minY = Math.min(minY, y);
+			maxX = Math.max(maxX, x);
+			maxY = Math.max(maxY, y);
+		});
+
+		for (let index = 0; index < mask.length; index += 1) {
+			if (mask[index]) continue;
+			const sourceIndex = index * 4;
+			foregroundData.data[sourceIndex] = sourceData.data[sourceIndex];
+			foregroundData.data[sourceIndex + 1] = sourceData.data[sourceIndex + 1];
+			foregroundData.data[sourceIndex + 2] = sourceData.data[sourceIndex + 2];
+			foregroundData.data[sourceIndex + 3] = sourceData.data[sourceIndex + 3];
+		}
+
+		const scleraCanvas = makeCanvas(eye.width, eye.height);
+		const scleraContext = scleraCanvas.getContext('2d');
+		const foregroundCanvas = makeCanvas(eye.width, eye.height);
+		const foregroundContext = foregroundCanvas.getContext('2d');
+		if (!scleraContext || !foregroundContext) throw new Error(`Unable to create eye layer canvases: ${eye.side}`);
+		scleraContext.putImageData(scleraData, 0, 0);
+		foregroundContext.putImageData(foregroundData, 0, 0);
+
+		const samples: EyeSample[] = [];
+		const sampleCount = 13;
+		for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex += 1) {
+			const amount = sampleIndex / (sampleCount - 1);
+			const x = Math.round(lerp(minX, maxX, amount));
+			let top = eye.height;
+			let bottom = 0;
+			for (let column = Math.max(minX, x - 2); column <= Math.min(maxX, x + 2); column += 1) {
+				for (let y = minY; y <= maxY; y += 1) {
+					if (!mask[y * eye.width + column]) continue;
+					top = Math.min(top, y);
+					bottom = Math.max(bottom, y);
+				}
+			}
+			if (top > bottom) {
+				top = minY;
+				bottom = maxY;
+			}
+			samples.push({ x, top, bottom });
+		}
+
+		return {
+			scleraCanvas,
+			foregroundCanvas,
+			mask,
+			bounds: { minX, minY, maxX, maxY, width: maxX - minX + 1, height: maxY - minY + 1 },
+			samples,
+		};
+	};
+
+	const createStateRig = (image: HTMLImageElement, eyeGeometry: EyeGeometry[]) => {
+		const eyes = {} as Record<EyeSide, EyeAsset>;
+		eyeGeometry.forEach((eye) => {
+			eyes[eye.side] = deriveEyeAsset(image, eye);
+		});
+
+		const baseCanvas = makeCanvas(LOGICAL_SIZE, LOGICAL_SIZE);
+		const baseContext = baseCanvas.getContext('2d', { willReadFrequently: true });
+		if (!baseContext) throw new Error('Unable to create the character base canvas.');
+		baseContext.drawImage(image, 0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
+		const baseData = baseContext.getImageData(0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
+
+		eyeGeometry.forEach((eye) => {
+			const asset = eyes[eye.side];
+			for (let y = 0; y < eye.height; y += 1) {
+				for (let x = 0; x < eye.width; x += 1) {
+					if (!asset.mask[y * eye.width + x]) continue;
+					const baseIndex = ((eye.y + y) * LOGICAL_SIZE + eye.x + x) * 4;
+					baseData.data[baseIndex + 3] = 0;
+				}
+			}
+		});
+		baseContext.putImageData(baseData, 0, 0);
+		return { baseCanvas, eyes } satisfies StateRig;
+	};
+
+	const getDynamicBoundary = (asset: EyeAsset, progress: number, lower = false) => asset.samples.map((sample) => {
+		const center = (sample.top + sample.bottom) * 0.5;
+		const openY = lower ? sample.bottom : sample.top;
+		return { x: sample.x, y: lerp(openY, center, progress) };
+	});
+
+	const drawSmoothBoundary = (context: CanvasRenderingContext2D, points: Array<{ x: number; y: number }>, connect = false) => {
+		if (!points.length) return;
+		if (connect) context.lineTo(points[0].x, points[0].y);
+		else context.moveTo(points[0].x, points[0].y);
+		for (let index = 1; index < points.length; index += 1) {
+			const previous = points[index - 1];
+			const current = points[index];
+			const middleX = (previous.x + current.x) * 0.5;
+			const middleY = (previous.y + current.y) * 0.5;
+			context.quadraticCurveTo(previous.x, previous.y, middleX, middleY);
+		}
+		const last = points[points.length - 1];
+		context.quadraticCurveTo(last.x, last.y, last.x, last.y);
+	};
+
+	const drawEyePath = (context: CanvasRenderingContext2D, asset: EyeAsset, progress: number) => {
+		const topPoints = getDynamicBoundary(asset, progress);
+		const bottomPoints = getDynamicBoundary(asset, progress, true).reverse();
+		context.beginPath();
+		drawSmoothBoundary(context, topPoints);
+		drawSmoothBoundary(context, bottomPoints, true);
+		if (topPoints.length) context.lineTo(topPoints[0].x, topPoints[0].y);
+		context.closePath();
+	};
+
+	document.querySelectorAll<HTMLButtonElement>('[data-hero-character]').forEach((character) => {
+		const canvas = character.querySelector<HTMLCanvasElement>('[data-hero-canvas]');
+		const hero = character.closest<HTMLElement>('.home-hero');
+		if (!canvas || !hero) return;
+
+		const sources: Record<StateName, string> = {
+			thinking: canvas.dataset.stateSrcThinking ?? '',
+		};
+		const eyeSources = {
+			irisPupil: canvas.dataset.eyeIrisPupilSrc ?? '',
+			highlight: canvas.dataset.eyeHighlightSrc ?? '',
+		};
+		const stateImages = {} as Record<StateName, HTMLImageElement>;
+		const eyeImages = {} as Record<keyof typeof eyeSources, HTMLImageElement>;
+		const eyeGeometry: EyeGeometry[] = [
+			{ side: 'left', x: 461, y: 476, width: 145, height: 122, depth: 1, maxX: 19, maxY: 13 },
+			{ side: 'right', x: 662, y: 504, width: 139, height: 111, depth: 0.82, maxX: 19, maxY: 13 },
+		];
+
+		let nextIdleAt = 0;
+		let idleUntil = 0;
+		let idleTargetX = 0;
+		let idleTargetY = 0;
+		let pointerX = 0;
+		let pointerY = 0;
+		let pointerInsideHero = false;
+		let inViewport = true;
+		let initialized = false;
+		let resizeObserver: ResizeObserver | undefined;
+		let intersectionObserver: IntersectionObserver | undefined;
+		let pixiApp: import('pixi.js').Application | undefined;
+		let appRunning = false;
+		let stateRigs = {} as Record<StateName, StateRig>;
+		let stateLayers = {} as Record<StateName, StateLayers>;
+		let motionRoot: import('pixi.js').Container | undefined;
+		let renderFrame = (now: number) => void now;
+
+		const eyeMotion = eyeGeometry.map(() => ({ x: 0, y: 0, vx: 0, vy: 0, targetX: 0, targetY: 0 }));
+		const pupilScaleBounds = { min: 0.9, max: 1.08 };
+		let pupilScale = 1;
+		let pupilScaleVelocity = 0;
+		let previousMovementEnergy = 0;
+		let settlePulse = 0;
+
+		const startIdleSaccade = (now: number) => {
+			if (finePointer.matches || reduceMotion.matches) return;
+			idleTargetX = randomBetween(-0.32, 0.32);
+			idleTargetY = randomBetween(-0.22, 0.2);
+			idleUntil = now + randomBetween(700, 1300);
+			nextIdleAt = idleUntil + randomBetween(1800, 3200);
 		};
 
-		const restoreState = () => {
-			if (character.dataset.characterState === 'idea') return;
-			setState(isHovering || isFocused ? 'curious' : 'thinking');
-		};
-
-		const resetGaze = () => {
-			eyes.forEach((eye) => {
-				eye.style.setProperty('--eye-shift-x', '0px');
-				eye.style.setProperty('--eye-shift-y', '0px');
-			});
-		};
-
-		const updateGaze = (clientX: number, clientY: number) => {
-			if (!finePointer.matches || reduceMotion.matches) return;
-			const bounds = character.getBoundingClientRect();
-			const x = clamp((clientX - (bounds.left + bounds.width / 2)) / (bounds.width / 2), -1, 1);
-			const y = clamp((clientY - (bounds.top + bounds.height * 0.44)) / (bounds.height * 0.56), -1, 1);
-
-			eyes.forEach((eye) => {
-				const depth = eye.dataset.heroEye === 'right' ? 0.82 : 1;
-				eye.style.setProperty('--eye-shift-x', `${x * 10 * depth}px`);
-				eye.style.setProperty('--eye-shift-y', `${y * 7 * depth}px`);
-			});
-		};
-
-		const blink = () => {
-			if (reduceMotion.matches || document.hidden) {
-				scheduleBlink();
+		const updateIdleGaze = (now: number) => {
+			if (finePointer.matches || reduceMotion.matches) {
+				idleTargetX = 0;
+				idleTargetY = 0;
 				return;
 			}
-			character.dataset.blinking = 'true';
-			window.clearTimeout(blinkEndTimer);
-			blinkEndTimer = window.setTimeout(() => {
-				delete character.dataset.blinking;
-				scheduleBlink();
-			}, 140);
+			if (now >= idleUntil) {
+				idleTargetX = 0;
+				idleTargetY = 0;
+			}
+			if (now >= nextIdleAt) startIdleSaccade(now);
 		};
 
-		const scheduleBlink = () => {
-			window.clearTimeout(blinkTimer);
-			if (reduceMotion.matches) return;
-			blinkTimer = window.setTimeout(blink, 4000 + Math.random() * 2500);
+		const getPointerTarget = () => {
+			if (!finePointer.matches || !pointerInsideHero || reduceMotion.matches) return { x: idleTargetX, y: idleTargetY };
+			const bounds = character.getBoundingClientRect();
+			return {
+				x: clamp((pointerX - (bounds.left + bounds.width / 2)) / (bounds.width / 2), -1, 1),
+				y: clamp((pointerY - (bounds.top + bounds.height * 0.44)) / (bounds.height * 0.56), -1, 1),
+			};
 		};
 
-		const activateIdea = () => {
-			setState('idea');
-			window.clearTimeout(ideaTimer);
-			ideaTimer = window.setTimeout(restoreState, 1100);
+		const updateEyeMotion = (deltaTime: number) => {
+			const pointerTarget = getPointerTarget();
+			const stiffness = 169;
+			const damping = 26;
+			let movementEnergy = 0;
+			eyeMotion.forEach((motion, index) => {
+				const geometry = eyeGeometry[index];
+				motion.targetX = pointerTarget.x * geometry.maxX * geometry.depth;
+				motion.targetY = pointerTarget.y * geometry.maxY * geometry.depth;
+				const accelerationX = (motion.targetX - motion.x) * stiffness - motion.vx * damping;
+				const accelerationY = (motion.targetY - motion.y) * stiffness - motion.vy * damping;
+				motion.vx += accelerationX * deltaTime;
+				motion.vy += accelerationY * deltaTime;
+				motion.x = clamp(motion.x + motion.vx * deltaTime, -geometry.maxX, geometry.maxX);
+				motion.y = clamp(motion.y + motion.vy * deltaTime, -geometry.maxY, geometry.maxY);
+
+				const errorX = (motion.targetX - motion.x) / Math.max(geometry.maxX, 1);
+				const errorY = (motion.targetY - motion.y) / Math.max(geometry.maxY, 1);
+				const speedX = motion.vx / Math.max(geometry.maxX * 6, 1);
+				const speedY = motion.vy / Math.max(geometry.maxY * 6, 1);
+				const errorEnergy = clamp(Math.hypot(errorX, errorY) / Math.SQRT2, 0, 1);
+				const speedEnergy = clamp(Math.hypot(speedX, speedY) / Math.SQRT2, 0, 1);
+				movementEnergy += clamp(errorEnergy * 0.55 + speedEnergy * 0.45, 0, 1);
+			});
+			return movementEnergy / eyeMotion.length;
 		};
 
-		character.addEventListener('pointerenter', () => {
-			isHovering = true;
-			if (character.dataset.characterState !== 'idea') setState('curious');
-		});
-		character.addEventListener('pointerleave', () => {
-			isHovering = false;
-			restoreState();
-		});
-		character.addEventListener('focus', () => {
-			isFocused = true;
-			if (character.dataset.characterState !== 'idea') setState('curious');
-		});
-		character.addEventListener('blur', () => {
-			isFocused = false;
-			restoreState();
-		});
-		character.addEventListener('click', activateIdea);
+		const updatePupilScale = (now: number, deltaTime: number, movementEnergy: number) => {
+			if (reduceMotion.matches) {
+				pupilScale = 1;
+				pupilScaleVelocity = 0;
+				previousMovementEnergy = 0;
+				settlePulse = 0;
+				return;
+			}
 
-		window.addEventListener('pointermove', (event) => {
-			window.cancelAnimationFrame(frame);
-			frame = window.requestAnimationFrame(() => updateGaze(event.clientX, event.clientY));
-		}, { passive: true });
-		window.addEventListener('pointerleave', resetGaze, { passive: true });
-		window.addEventListener('pagehide', () => {
-			window.cancelAnimationFrame(frame);
-			window.clearTimeout(ideaTimer);
-			window.clearTimeout(blinkTimer);
-			window.clearTimeout(blinkEndTimer);
+			if (previousMovementEnergy > 0.32 && movementEnergy < 0.14) {
+				settlePulse = 1;
+			}
+			previousMovementEnergy = movementEnergy;
+			settlePulse *= Math.exp(-6 * deltaTime);
+
+			const breathing = Math.sin((now / 5200) * Math.PI * 2) * 0.018;
+			const movementShrink = movementEnergy * 0.095;
+			const rebound = settlePulse * 0.048;
+			const targetScale = clamp(1.015 + breathing - movementShrink + rebound, pupilScaleBounds.min, pupilScaleBounds.max);
+			const acceleration = (targetScale - pupilScale) * 125 - pupilScaleVelocity * 19;
+			pupilScaleVelocity += acceleration * deltaTime;
+			pupilScale = clamp(pupilScale + pupilScaleVelocity * deltaTime, pupilScaleBounds.min, pupilScaleBounds.max);
+		};
+
+		const updateMotionRoot = (now: number) => {
+			if (!motionRoot) return;
+			const breath = Math.sin(now * 0.00125);
+			motionRoot.scale.set(1 + breath * 0.0018, 1 + breath * 0.0055);
+			motionRoot.rotation = Math.sin(now * 0.00052) * 0.0028;
+			motionRoot.position.set(627 + Math.sin(now * 0.0004) * 0.45, 1050 - breath * 1.25);
+		};
+
+		const drawSclera = (context: CanvasRenderingContext2D, asset: EyeAsset) => {
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+			context.save();
+			drawEyePath(context, asset, 0);
+			context.clip();
+			context.drawImage(asset.scleraCanvas, 0, 0);
+			context.restore();
+		};
+
+		const getComponentCenter = (asset: EyeAsset, motion: (typeof eyeMotion)[number], size: number) => {
+			const safeX = Math.max(0, asset.bounds.width * 0.5 - size * 0.5 - 2);
+			const safeY = Math.max(0, asset.bounds.height * 0.5 - size * 0.5 - 2);
+			let offsetX = clamp(motion.x, -safeX, safeX);
+			let offsetY = clamp(motion.y, -safeY, safeY);
+			if (safeX > 0 && safeY > 0) {
+				const normalizedX = offsetX / safeX;
+				const normalizedY = offsetY / safeY;
+				const normalizedLength = Math.hypot(normalizedX, normalizedY);
+				if (normalizedLength > 1) {
+					offsetX = (normalizedX / normalizedLength) * safeX;
+					offsetY = (normalizedY / normalizedLength) * safeY;
+				}
+			}
+			return {
+				x: (asset.bounds.minX + asset.bounds.maxX) * 0.5 + offsetX,
+				y: (asset.bounds.minY + asset.bounds.maxY) * 0.5 + offsetY,
+			};
+		};
+
+		const drawEyeComponent = (context: CanvasRenderingContext2D, asset: EyeAsset, image: HTMLImageElement, motion: (typeof eyeMotion)[number], size: number, motionBoundsSize = size) => {
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+			const center = getComponentCenter(asset, motion, motionBoundsSize);
+			context.save();
+			drawEyePath(context, asset, 0);
+			context.clip();
+			context.drawImage(image, center.x - size * 0.5, center.y - size * 0.5, size, size);
+			context.restore();
+		};
+
+		// The authored iris is vertically elongated, so let its rendered height nearly
+		// fill the sclera while keeping a little breathing room for gaze motion.
+		const getIrisSize = (asset: EyeAsset) => Math.min(asset.bounds.width * 0.86, asset.bounds.height * 1.24);
+
+		const drawIrisPupil = (context: CanvasRenderingContext2D, asset: EyeAsset, image: HTMLImageElement, motion: (typeof eyeMotion)[number], scale: number) => {
+			const irisPupilSize = getIrisSize(asset) * clamp(scale, pupilScaleBounds.min, pupilScaleBounds.max);
+			drawEyeComponent(context, asset, image, motion, irisPupilSize, irisPupilSize);
+		};
+
+		const drawHighlight = (context: CanvasRenderingContext2D, asset: EyeAsset, image: HTMLImageElement, motion: (typeof eyeMotion)[number], scale: number) => {
+			const highlightSize = getIrisSize(asset) * clamp(scale, pupilScaleBounds.min, pupilScaleBounds.max);
+			drawEyeComponent(context, asset, image, motion, highlightSize, highlightSize);
+		};
+
+		const setupLayers = async () => {
+			const { Application, Container, Sprite, Texture } = await import('pixi.js');
+			const app = new Application();
+			await app.init({
+				canvas,
+				width: LOGICAL_SIZE,
+				height: LOGICAL_SIZE,
+				resolution: Math.min(window.devicePixelRatio || 1, 2),
+				autoDensity: true,
+				backgroundAlpha: 0,
+				antialias: true,
+				preference: 'webgl',
+				autoStart: false,
+			});
+			canvas.style.width = '100%';
+			canvas.style.height = '100%';
+			pixiApp = app;
+
+			const root = new Container();
+			root.pivot.set(627, 1050);
+			root.position.set(627, 1050);
+			const content = new Container();
+			root.addChild(content);
+			app.stage.addChild(root);
+			motionRoot = root;
+
+			stateNames.forEach((state) => {
+				const rig = stateRigs[state];
+				const baseSprite = new Sprite(Texture.from(rig.baseCanvas));
+				content.addChild(baseSprite);
+				stateLayers[state] = { baseSprite, eyes: {} as Record<EyeSide, EyeLayers> };
+			});
+
+			const addEyeLayer = (state: StateName, side: EyeSide) => {
+				const eye = eyeGeometry.find((geometry) => geometry.side === side);
+				if (!eye) throw new Error(`Missing eye geometry: ${side}`);
+				const asset = stateRigs[state].eyes[side];
+				const scleraCanvas = makeCanvas(eye.width, eye.height);
+				const irisPupilCanvas = makeCanvas(eye.width, eye.height);
+				const highlightCanvas = makeCanvas(eye.width, eye.height);
+				const scleraTexture = Texture.from(scleraCanvas);
+				const irisPupilTexture = Texture.from(irisPupilCanvas);
+				const highlightTexture = Texture.from(highlightCanvas);
+				const layers = {
+					scleraCanvas,
+					irisPupilCanvas,
+					highlightCanvas,
+					scleraTexture,
+					irisPupilTexture,
+					highlightTexture,
+					scleraSprite: new Sprite(scleraTexture),
+					irisPupilSprite: new Sprite(irisPupilTexture),
+					highlightSprite: new Sprite(highlightTexture),
+					foregroundSprite: new Sprite(Texture.from(asset.foregroundCanvas)),
+				};
+				layers.scleraSprite.position.set(eye.x, eye.y);
+				layers.irisPupilSprite.position.set(eye.x, eye.y);
+				layers.highlightSprite.position.set(eye.x, eye.y);
+				layers.foregroundSprite.position.set(eye.x, eye.y);
+				stateLayers[state].eyes[side] = layers;
+				return layers;
+			};
+
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => {
+				addEyeLayer(state, eye.side);
+			}));
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].scleraSprite)));
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].irisPupilSprite)));
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].highlightSprite)));
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].foregroundSprite)));
+
+			const updateTexture = (texture: { source: { update: () => void } }) => texture.source.update();
+			const updateStateEye = (state: StateName, side: EyeSide, index: number) => {
+				const asset = stateRigs[state].eyes[side];
+				const layers = stateLayers[state].eyes[side];
+				const motion = eyeMotion[index];
+				const scleraContext = layers.scleraCanvas.getContext('2d');
+				const irisPupilContext = layers.irisPupilCanvas.getContext('2d');
+				const highlightContext = layers.highlightCanvas.getContext('2d');
+				if (!scleraContext || !irisPupilContext || !highlightContext) return;
+				drawSclera(scleraContext, asset);
+				drawIrisPupil(irisPupilContext, asset, eyeImages.irisPupil, motion, pupilScale);
+				drawHighlight(highlightContext, asset, eyeImages.highlight, motion, pupilScale);
+				updateTexture(layers.scleraTexture);
+				updateTexture(layers.irisPupilTexture);
+				updateTexture(layers.highlightTexture);
+			};
+
+			renderFrame = (now: number) => {
+				updateMotionRoot(now);
+				stateNames.forEach((state) => {
+					const weight = 1;
+					stateLayers[state].baseSprite.alpha = weight;
+					stateLayers[state].eyes.left.scleraSprite.alpha = weight;
+					stateLayers[state].eyes.right.scleraSprite.alpha = weight;
+					stateLayers[state].eyes.left.irisPupilSprite.alpha = weight;
+					stateLayers[state].eyes.right.irisPupilSprite.alpha = weight;
+					stateLayers[state].eyes.left.highlightSprite.alpha = weight;
+					stateLayers[state].eyes.right.highlightSprite.alpha = weight;
+					stateLayers[state].eyes.left.foregroundSprite.alpha = weight;
+					stateLayers[state].eyes.right.foregroundSprite.alpha = weight;
+					if (weight > 0.001) {
+						updateStateEye(state, 'left', 0);
+						updateStateEye(state, 'right', 1);
+					}
+				});
+				app.render();
+			};
+
+		app.ticker.add(() => {
+			const now = performance.now();
+			const deltaTime = Math.min(app.ticker.deltaMS / 1000, 0.033);
+			if (!initialized || document.hidden || !inViewport) return;
+			updateIdleGaze(now);
+			const movementEnergy = updateEyeMotion(deltaTime);
+			updatePupilScale(now, deltaTime, movementEnergy);
+			renderFrame(now);
 		});
 
-		scheduleBlink();
+		return app;
+	};
+
+		const startAnimation = () => {
+			if (!pixiApp || appRunning || document.hidden || !inViewport || reduceMotion.matches) return;
+			appRunning = true;
+			pixiApp.ticker.start();
+		};
+
+		const stopAnimation = () => {
+			if (!pixiApp || !appRunning) return;
+			appRunning = false;
+			pixiApp.ticker.stop();
+		};
+
+		const handleMotionPreference = () => {
+			if (reduceMotion.matches) {
+				eyeMotion.forEach((motion) => {
+					motion.x = 0;
+					motion.y = 0;
+					motion.vx = 0;
+					motion.vy = 0;
+				});
+				pupilScale = 1;
+				pupilScaleVelocity = 0;
+				previousMovementEnergy = 0;
+				settlePulse = 0;
+				stopAnimation();
+				renderFrame(performance.now());
+			} else {
+				startAnimation();
+			}
+		};
+
+		const handlePointerCapability = () => {
+			if (finePointer.matches) {
+				idleTargetX = 0;
+				idleTargetY = 0;
+			} else {
+				nextIdleAt = performance.now() + randomBetween(2800, 5500);
+			}
+			startAnimation();
+		};
+
+		const handleVisibility = () => {
+			if (document.hidden) {
+				stopAnimation();
+				return;
+			}
+			startAnimation();
+		};
+
+		const handlePointerEnter = (event: PointerEvent) => {
+			if (event.pointerType !== 'touch') {
+				pointerInsideHero = true;
+			}
+			startAnimation();
+		};
+
+		const handlePointerLeave = () => {
+			pointerInsideHero = false;
+			startAnimation();
+		};
+
+		const handlePointerMove = (event: PointerEvent) => {
+			if (!finePointer.matches || event.pointerType === 'touch') return;
+			pointerX = event.clientX;
+			pointerY = event.clientY;
+			pointerInsideHero = true;
+			startAnimation();
+		};
+
+		const cleanup = () => {
+			stopAnimation();
+			resizeObserver?.disconnect();
+			intersectionObserver?.disconnect();
+			hero.removeEventListener('pointerenter', handlePointerEnter);
+			hero.removeEventListener('pointerleave', handlePointerLeave);
+			hero.removeEventListener('pointermove', handlePointerMove);
+			document.removeEventListener('visibilitychange', handleVisibility);
+			window.removeEventListener('pagehide', cleanup);
+			reduceMotion.removeEventListener('change', handleMotionPreference);
+			finePointer.removeEventListener('change', handlePointerCapability);
+			pixiApp?.destroy(false, { children: true, texture: true, textureSource: true });
+		};
+
+		const initialize = async () => {
+			try {
+				const [thinking, irisPupil, highlight] = await Promise.all([
+					loadImage(sources.thinking),
+					loadImage(eyeSources.irisPupil),
+					loadImage(eyeSources.highlight),
+				]);
+				stateImages.thinking = thinking;
+				eyeImages.irisPupil = irisPupil;
+				eyeImages.highlight = highlight;
+				stateNames.forEach((state) => {
+					stateRigs[state] = createStateRig(stateImages[state], eyeGeometry);
+				});
+				await setupLayers();
+			} catch (error) {
+				console.warn('[hero-rig] Falling back to static character.', error);
+				canvas.dataset.canvasError = 'true';
+				return;
+			}
+
+			initialized = true;
+			canvas.dataset.canvasReady = 'true';
+			nextIdleAt = performance.now() + randomBetween(2800, 5500);
+			renderFrame(performance.now());
+			resizeObserver = new ResizeObserver(() => renderFrame(performance.now()));
+			resizeObserver.observe(character);
+			intersectionObserver = new IntersectionObserver(([entry]) => {
+				inViewport = entry.isIntersecting;
+				if (inViewport) startAnimation();
+				else stopAnimation();
+			}, { rootMargin: '100px' });
+			intersectionObserver.observe(character);
+
+			hero.addEventListener('pointerenter', handlePointerEnter, { passive: true });
+			hero.addEventListener('pointerleave', handlePointerLeave, { passive: true });
+			hero.addEventListener('pointermove', handlePointerMove, { passive: true });
+			document.addEventListener('visibilitychange', handleVisibility);
+			window.addEventListener('pagehide', cleanup, { once: true });
+			reduceMotion.addEventListener('change', handleMotionPreference);
+			finePointer.addEventListener('change', handlePointerCapability);
+			startAnimation();
+		};
+
+		void initialize();
 	});
 </script>
