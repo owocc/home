@@ -58,8 +58,10 @@ const canvasSize = 1254;
 
 	type EyeAsset = {
 		scleraCanvas: HTMLCanvasElement;
+		eyelidCanvas: HTMLCanvasElement;
 		foregroundCanvas: HTMLCanvasElement;
 		mask: Uint8Array;
+		eyelidMask: Uint8Array;
 		bounds: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number };
 		samples: EyeSample[];
 	};
@@ -79,6 +81,7 @@ const canvasSize = 1254;
 		scleraSprite: import('pixi.js').Sprite;
 		irisPupilSprite: import('pixi.js').Sprite;
 		highlightSprite: import('pixi.js').Sprite;
+		eyelidSprite: import('pixi.js').Sprite;
 		foregroundSprite: import('pixi.js').Sprite;
 	};
 
@@ -115,6 +118,15 @@ const canvasSize = 1254;
 		const blue = pixels[index + 2];
 		const alpha = pixels[index + 3];
 		return alpha > 120 && red > 215 && green > 215 && blue > 215 && Math.max(red, green, blue) - Math.min(red, green, blue) < 34;
+	};
+
+	const isEyelidPixel = (pixels: Uint8ClampedArray, index: number) => {
+		const red = pixels[index];
+		const green = pixels[index + 1];
+		const blue = pixels[index + 2];
+		const alpha = pixels[index + 3];
+		const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+		return alpha > 90 && luminance < 128;
 	};
 
 	const findLargestComponent = (candidate: Uint8Array, width: number) => {
@@ -179,7 +191,9 @@ const canvasSize = 1254;
 		}
 
 		const mask = new Uint8Array(eye.width * eye.height);
+		const eyelidMask = new Uint8Array(eye.width * eye.height);
 		const scleraData = sourceContext.createImageData(eye.width, eye.height);
+		const eyelidData = sourceContext.createImageData(eye.width, eye.height);
 		const foregroundData = sourceContext.createImageData(eye.width, eye.height);
 		let minX = eye.width;
 		let minY = eye.height;
@@ -201,8 +215,38 @@ const canvasSize = 1254;
 			maxY = Math.max(maxY, y);
 		});
 
+		// Keep the dark contour immediately around the sclera as its own static
+		// layer, so a moving iris never cuts through the authored eyelid line.
+		const eyelidRadius = 7;
+		for (let y = 0; y < eye.height; y += 1) {
+			for (let x = 0; x < eye.width; x += 1) {
+				const pixel = y * eye.width + x;
+				if (mask[pixel] || !isEyelidPixel(sourceData.data, pixel * 4)) continue;
+				let nearSclera = false;
+				for (let offsetY = -eyelidRadius; offsetY <= eyelidRadius && !nearSclera; offsetY += 1) {
+					for (let offsetX = -eyelidRadius; offsetX <= eyelidRadius; offsetX += 1) {
+						if (offsetX * offsetX + offsetY * offsetY > eyelidRadius * eyelidRadius) continue;
+						const neighborX = x + offsetX;
+						const neighborY = y + offsetY;
+						if (neighborX < 0 || neighborX >= eye.width || neighborY < 0 || neighborY >= eye.height) continue;
+						if (mask[neighborY * eye.width + neighborX]) {
+							nearSclera = true;
+							break;
+						}
+					}
+				}
+				if (!nearSclera) continue;
+				eyelidMask[pixel] = 1;
+				const sourceIndex = pixel * 4;
+				eyelidData.data[sourceIndex] = sourceData.data[sourceIndex];
+				eyelidData.data[sourceIndex + 1] = sourceData.data[sourceIndex + 1];
+				eyelidData.data[sourceIndex + 2] = sourceData.data[sourceIndex + 2];
+				eyelidData.data[sourceIndex + 3] = sourceData.data[sourceIndex + 3];
+			}
+		}
+
 		for (let index = 0; index < mask.length; index += 1) {
-			if (mask[index]) continue;
+			if (mask[index] || eyelidMask[index]) continue;
 			const sourceIndex = index * 4;
 			foregroundData.data[sourceIndex] = sourceData.data[sourceIndex];
 			foregroundData.data[sourceIndex + 1] = sourceData.data[sourceIndex + 1];
@@ -212,10 +256,13 @@ const canvasSize = 1254;
 
 		const scleraCanvas = makeCanvas(eye.width, eye.height);
 		const scleraContext = scleraCanvas.getContext('2d');
+		const eyelidCanvas = makeCanvas(eye.width, eye.height);
+		const eyelidContext = eyelidCanvas.getContext('2d');
 		const foregroundCanvas = makeCanvas(eye.width, eye.height);
 		const foregroundContext = foregroundCanvas.getContext('2d');
-		if (!scleraContext || !foregroundContext) throw new Error(`Unable to create eye layer canvases: ${eye.side}`);
+		if (!scleraContext || !eyelidContext || !foregroundContext) throw new Error(`Unable to create eye layer canvases: ${eye.side}`);
 		scleraContext.putImageData(scleraData, 0, 0);
+		eyelidContext.putImageData(eyelidData, 0, 0);
 		foregroundContext.putImageData(foregroundData, 0, 0);
 
 		const samples: EyeSample[] = [];
@@ -241,8 +288,10 @@ const canvasSize = 1254;
 
 		return {
 			scleraCanvas,
+			eyelidCanvas,
 			foregroundCanvas,
 			mask,
+			eyelidMask,
 			bounds: { minX, minY, maxX, maxY, width: maxX - minX + 1, height: maxY - minY + 1 },
 			samples,
 		};
