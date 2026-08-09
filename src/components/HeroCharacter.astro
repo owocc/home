@@ -593,11 +593,13 @@ const canvasSize = 1254;
 					scleraSprite: new Sprite(scleraTexture),
 					irisPupilSprite: new Sprite(irisPupilTexture),
 					highlightSprite: new Sprite(highlightTexture),
+					eyelidSprite: new Sprite(Texture.from(asset.eyelidCanvas)),
 					foregroundSprite: new Sprite(Texture.from(asset.foregroundCanvas)),
 				};
 				layers.scleraSprite.position.set(eye.x, eye.y);
 				layers.irisPupilSprite.position.set(eye.x, eye.y);
 				layers.highlightSprite.position.set(eye.x, eye.y);
+				layers.eyelidSprite.position.set(eye.x, eye.y);
 				layers.foregroundSprite.position.set(eye.x, eye.y);
 				stateLayers[state].eyes[side] = layers;
 				return layers;
@@ -609,6 +611,7 @@ const canvasSize = 1254;
 			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].scleraSprite)));
 			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].irisPupilSprite)));
 			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].highlightSprite)));
+			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].eyelidSprite)));
 			stateNames.forEach((state) => eyeGeometry.forEach((eye) => content.addChild(stateLayers[state].eyes[eye.side].foregroundSprite)));
 
 			const updateTexture = (texture: { source: { update: () => void } }) => texture.source.update();
@@ -639,6 +642,8 @@ const canvasSize = 1254;
 					stateLayers[state].eyes.right.irisPupilSprite.alpha = weight;
 					stateLayers[state].eyes.left.highlightSprite.alpha = weight;
 					stateLayers[state].eyes.right.highlightSprite.alpha = weight;
+					stateLayers[state].eyes.left.eyelidSprite.alpha = weight;
+					stateLayers[state].eyes.right.eyelidSprite.alpha = weight;
 					stateLayers[state].eyes.left.foregroundSprite.alpha = weight;
 					stateLayers[state].eyes.right.foregroundSprite.alpha = weight;
 					if (weight > 0.001) {
