@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
+import Languages from '@lucide/astro/icons/languages';
 
 interface Props {
 	post: CollectionEntry<'blog'>;
@@ -8,9 +9,10 @@ interface Props {
 }
 
 const { post, index } = Astro.props;
-const date = new Intl.DateTimeFormat('zh-CN', {
+const isEn = post.data.lang === 'en';
+const date = new Intl.DateTimeFormat(isEn ? 'en-US' : 'zh-CN', {
 	year: 'numeric',
-	month: '2-digit',
+	month: isEn ? 'short' : '2-digit',
 	day: '2-digit',
 }).format(post.data.publishedAt);
 ---
@@ -23,6 +25,19 @@ const date = new Intl.DateTimeFormat('zh-CN', {
 				<time datetime={post.data.publishedAt.toISOString()}>{date}</time>
 				<span>·</span>
 				<span>{post.data.tags[0]}</span>
+				<div class="blog-card__badges">
+					<span class:list={['lang-pill', isEn ? 'lang-pill--en' : 'lang-pill--cn']} data-i18n-lang-badge={post.data.lang}>
+						{isEn ? 'EN' : 'CN'}
+					</span>
+					{post.data.hasTranslation && (
+						<span class="translation-pill" title={isEn ? 'Translations available' : '提供多语言翻译版本'}>
+							<Languages class="icon" size={13} stroke-width={2.2} />
+							<span class="translation-pill__text" data-i18n-trans-badge={isEn ? 'has-cn' : 'has-en'}>
+								{isEn ? 'CN Available' : '有 EN 译文'}
+							</span>
+						</span>
+					)}
+				</div>
 			</div>
 			<h3>{post.data.title}</h3>
 			<p>{post.data.description}</p>

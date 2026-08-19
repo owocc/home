@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
 import ArrowLeft from '@lucide/astro/icons/arrow-left';
 import ArrowRight from '@lucide/astro/icons/arrow-right';
+import Languages from '@lucide/astro/icons/languages';
 import Layout from '../../layouts/Layout.astro';
 
 interface Props {
@@ -27,47 +28,66 @@ export async function getStaticPaths() {
 
 const { post, previous, next } = Astro.props;
 const { Content } = await render(post);
-const dateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+const isEn = post.data.lang === 'en';
+const dateFormat = new Intl.DateTimeFormat(isEn ? 'en-US' : 'zh-CN', { year: 'numeric', month: isEn ? 'short' : 'long', day: 'numeric' });
 ---
 
 <Layout title={post.data.title} description={post.data.description}>
 	<header class="detail-header blog-detail-header">
 		<div class="shell">
-			<a class="detail-header__back" href="/blog/"><ArrowLeft class="icon" size={16} stroke-width={2.5} />返回文章列表</a>
-			<div class="detail-header__grid">
+			<a class="detail-header__back" href="/blog/"><ArrowLeft class="icon" size={16} stroke-width={2.5} /><span data-i18n-key="common.back">返回文章列表</span></a>
+			<div class="detail-header__grid" data-reveal>
 				<div>
-					<p class="eyebrow">FIELD NOTE / 创作笔记</p>
+					<div class="detail-header__tagline">
+						<p class="eyebrow">FIELD NOTE / 创作笔记</p>
+						<span class:list={['lang-pill', isEn ? 'lang-pill--en' : 'lang-pill--cn']}>{isEn ? 'English' : '中文'}</span>
+					</div>
 					<h1 class="display">{post.data.title}</h1>
 					<p class="detail-header__summary">{post.data.description}</p>
 				</div>
 				<aside class="detail-meta" aria-label="文章资料">
 					<dl>
 						<div>
-							<dt>发布于</dt>
+							<dt data-i18n-key="common.publishedAt">发布于</dt>
 							<dd><time datetime={post.data.publishedAt.toISOString()}>{dateFormat.format(post.data.publishedAt)}</time></dd>
 						</div>
 						{post.data.updatedAt && (
 							<div>
-								<dt>更新于</dt>
+								<dt data-i18n-key="common.updatedAt">更新于</dt>
 								<dd><time datetime={post.data.updatedAt.toISOString()}>{dateFormat.format(post.data.updatedAt)}</time></dd>
 							</div>
 						)}
-						<div><dt>标签</dt><dd>{post.data.tags.join(' / ')}</dd></div>
+						<div><dt data-i18n-key="common.tags">标签</dt><dd>{post.data.tags.join(' / ')}</dd></div>
+						<div>
+							<dt>语言与翻译</dt>
+							<dd>{isEn ? 'English (EN)' : '中文 (CN)'} · {post.data.hasTranslation ? '提供双语版本' : '单语言版本'}</dd>
+						</div>
 					</dl>
 				</aside>
 			</div>
 		</div>
 	</header>
 
-	<div class="article-shell shell">
+	<div class="article-shell shell" data-reveal>
 		<article class="prose">
 			<Content />
 		</article>
 		<aside class="article-aside" aria-label="文章补充信息">
 			<div class="article-aside__note article-aside__note--blog">
 				<span class="script">margin note</span>
-				<p>这里收录的是过程中的判断和未完成想法，欢迎把它当作一页公开的工作笔记。</p>
+				<p>{isEn ? 'This is an open field note documenting real architectural decisions and thoughts.' : '这里收录的是过程中的判断和未完成想法，欢迎把它当作一页公开的工作笔记。'}</p>
 			</div>
+			{post.data.hasTranslation && (
+				<div class="article-aside__translation">
+					<div class="translation-box">
+						<Languages class="icon" size={18} stroke-width={2.2} />
+						<div>
+							<strong>多语言版本</strong>
+							<p>本文支持 {isEn ? 'CN / EN' : '中文 / English'} 对照阅读。</p>
+						</div>
+					</div>
+				</div>
+			)}
 			<ul class="tag-list detail-tag-list" aria-label="文章标签">
 				{post.data.tags.map((tag) => <li>{tag}</li>)}
 			</ul>
@@ -77,19 +97,19 @@ const dateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'l
 	<nav class="case-nav shell" aria-label="文章翻页">
 		{previous ? (
 			<a class="case-nav__item case-nav__item--previous" href={`/blog/${previous.id}/`}>
-				<span class="eyebrow"><ArrowLeft class="icon" size={15} stroke-width={2.5} />更新一篇</span>
+				<span class="eyebrow"><ArrowLeft class="icon" size={15} stroke-width={2.5} /><span data-i18n-key="common.prev">更新一篇</span></span>
 				<strong>{previous.data.title}</strong>
 			</a>
 		) : <span class="case-nav__empty" aria-hidden="true"></span>}
 		{next ? (
 			<a class="case-nav__item case-nav__item--next" href={`/blog/${next.id}/`}>
-				<span class="eyebrow">更早一篇 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
+				<span class="eyebrow"><span data-i18n-key="common.next">更早一篇</span> <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
 				<strong>{next.data.title}</strong>
 			</a>
 		) : (
 			<a class="case-nav__item case-nav__item--next" href="/blog/">
-				<span class="eyebrow">回到笔记 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
-				<strong>全部文章</strong>
+				<span class="eyebrow"><span data-i18n-key="common.back">回到笔记</span> <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
+				<strong data-i18n-key="common.viewAll">全部文章</strong>
 			</a>
 		)}
 	</nav>

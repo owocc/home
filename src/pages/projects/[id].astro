@@ -34,7 +34,7 @@ const { Content } = await render(project);
 	<header class:list={['detail-header', 'project-detail-header', `theme-${project.data.theme}`]}>
 		<div class="shell">
 			<a class="detail-header__back" href="/projects/"><ArrowLeft class="icon" size={16} stroke-width={2.5} />返回项目列表</a>
-			<div class="detail-header__grid">
+			<div class="detail-header__grid" data-reveal>
 				<div>
 					<p class="eyebrow">PROJECT CASE / 项目案例</p>
 					<h1 class="display">{project.data.title}</h1>
@@ -51,7 +51,7 @@ const { Content } = await render(project);
 		</div>
 	</header>
 
-	<div class="article-shell shell">
+	<div class="article-shell shell" data-reveal>
 		<article class="prose">
 			<Content />
 		</article>

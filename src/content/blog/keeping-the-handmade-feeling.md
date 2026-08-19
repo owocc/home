@@ -6,6 +6,9 @@ updatedAt: "2026-07-02"
 tags: ["设计系统", "视觉设计", "工作方法"]
 featured: true
 draft: false
+lang: cn
+hasTranslation: true
+translations: ["en"]
 ---
 
 设计系统很容易被误解成一台“把所有东西变得一样”的机器。可真正有用的系统，应该帮助团队稳定地表达某种性格，而不是擦掉性格。

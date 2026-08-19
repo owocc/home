@@ -5,6 +5,8 @@ publishedAt: "2025-12-12"
 tags: ["作品集", "写作", "项目复盘"]
 featured: false
 draft: false
+lang: cn
+hasTranslation: false
 ---
 
 作品集常让人产生一种压力：项目必须足够大，才值得认真介绍。但对个人创作者而言，一个周末实验同样可以呈现判断力，关键是不要把案例写成功能清单。

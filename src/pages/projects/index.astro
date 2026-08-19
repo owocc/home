@@ -12,9 +12,9 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
 	<header class="page-hero page-hero--projects">
 		<div class="page-hero__inner shell">
 			<span class="page-hero__stamp" aria-hidden="true">ARCHIVE / 01</span>
-			<p class="eyebrow">PROJECTS / 项目档案</p>
+			<p class="eyebrow" data-i18n-key="projects.allWork">PROJECTS / 项目档案</p>
 			<h1 class="display">MADE WITH<br /><span class="poster-label">CURIOSITY.</span></h1>
-			<p class="page-hero__lede">从模糊的问题、草图和小实验开始，把设计与代码变成可以被体验的作品。</p>
+			<p class="page-hero__lede" data-i18n-key="projects.intro">从模糊的问题、草图和小实验开始，把设计与代码变成可以被体验的作品。</p>
 		</div>
 	</header>
 
@@ -22,8 +22,8 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
 		<div class="shell">
 			<div class="listing-section__intro" data-reveal>
 				<div>
-					<p class="eyebrow">ALL WORK / 全部作品</p>
-					<h2 id="project-list-title">按创作顺序整理</h2>
+					<p class="eyebrow" data-i18n-key="projects.allWork">ALL WORK / 全部作品</p>
+					<h2 id="project-list-title" data-i18n-key="projects.heading">按创作顺序整理</h2>
 				</div>
 				<p>共 {projects.length} 个公开项目。点击卡片阅读完整案例、设计选择与项目反思。</p>
 			</div>
@@ -35,9 +35,9 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
 
 	<section class="archive-cta">
 		<div class="archive-cta__inner shell" data-reveal>
-			<p class="script">more ideas are coming...</p>
-			<h2>想看看创作过程？</h2>
-			<a class="button button--ink" href="/blog/">去读创作笔记 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+			<p class="script" data-i18n-key="projects.cta.quote">more ideas are coming...</p>
+			<h2 data-i18n-key="projects.cta.title">想看看创作过程？</h2>
+			<a class="button button--ink" href="/blog/"><span data-i18n-key="projects.cta.button">去读创作笔记</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</section>
 </Layout>

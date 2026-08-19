@@ -5,6 +5,9 @@ publishedAt: "2026-03-21"
 tags: ["交互动效", "前端", "无障碍"]
 featured: true
 draft: false
+lang: cn
+hasTranslation: true
+translations: ["en"]
 ---
 
 动效最吸引人的地方，也是它最危险的地方：哪怕没有意义，移动本身也会抢走注意力。因此我在加入动画前，会先问它到底要解释什么。

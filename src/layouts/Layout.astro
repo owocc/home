@@ -28,7 +28,7 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 ---
 
 <!doctype html>
-<html lang={siteConfig.language}>
+<html lang="zh-CN" data-lang="cn">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -57,10 +57,40 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 		<meta name="twitter:description" content={description} />
 		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 		<title>{pageTitle}</title>
-		<script is:inline>document.documentElement.classList.add('js');</script>
+
+		<!-- Immediate Theme and Language Detection to Prevent FOUC -->
+		<script is:inline>
+			(function() {
+				document.documentElement.classList.add('js');
+				
+				// Theme init
+				try {
+					var storedTheme = localStorage.getItem('theme');
+					if (storedTheme === 'dark' || storedTheme === 'light') {
+						document.documentElement.setAttribute('data-theme', storedTheme);
+					} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+						document.documentElement.setAttribute('data-theme', 'dark');
+					} else {
+						document.documentElement.setAttribute('data-theme', 'light');
+					}
+				} catch (e) {}
+
+				// Language init (default 'cn')
+				try {
+					var storedLang = localStorage.getItem('site_lang');
+					if (storedLang === 'en' || storedLang === 'cn') {
+						document.documentElement.setAttribute('data-lang', storedLang);
+						document.documentElement.setAttribute('lang', storedLang === 'en' ? 'en-US' : 'zh-CN');
+					} else {
+						document.documentElement.setAttribute('data-lang', 'cn');
+						document.documentElement.setAttribute('lang', 'zh-CN');
+					}
+				} catch (e) {}
+			})();
+		</script>
 	</head>
 	<body>
-		<a class="skip-link" href="#main-content">跳到主要内容</a>
+		<a class="skip-link" href="#main-content" data-i18n-key="skip.link">跳到主要内容</a>
 		<Header currentPath={currentPath} />
 
 		<main id="main-content" tabindex="-1">
@@ -76,19 +106,65 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 			if (reduceMotion.matches || !('IntersectionObserver' in window)) {
 				revealItems.forEach((item) => item.classList.add('is-visible'));
 			} else {
+				// Apple-style bidirectional scroll animation (appear when scrolling down / entering viewport, revert when exiting)
 				const observer = new IntersectionObserver(
 					(entries) => {
 						entries.forEach((entry) => {
-							if (!entry.isIntersecting) return;
-							entry.target.classList.add('is-visible');
-							observer.unobserve(entry.target);
+							if (entry.isIntersecting) {
+								entry.target.classList.add('is-visible');
+							} else {
+								// Only revert elements that are below the viewport or scrolled out
+								const rect = entry.boundingClientRect;
+								if (rect.top > 0) {
+									entry.target.classList.remove('is-visible');
+								}
+							}
 						});
 					},
-					{ threshold: 0.12, rootMargin: '0px 0px -4% 0px' },
+					{ threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
 				);
 				revealItems.forEach((item) => observer.observe(item));
 			}
 
+			// Apple-style smart sticky header: appears on scroll up, hides on scroll down (unless near top)
+			const header = document.getElementById('site-header');
+			if (header) {
+				let lastScrollY = window.scrollY;
+				let ticking = false;
+
+				window.addEventListener('scroll', () => {
+					if (!ticking) {
+						window.requestAnimationFrame(() => {
+							const currentScrollY = window.scrollY;
+							
+							// Header border styling
+							if (currentScrollY > 15) {
+								header.classList.add('is-scrolled');
+							} else {
+								header.classList.remove('is-scrolled');
+							}
+
+							// Hide / show header based on scroll direction
+							const isMenuOpen = header.classList.contains('nav-open');
+							if (!isMenuOpen) {
+								if (currentScrollY > 100 && currentScrollY > lastScrollY + 4) {
+									// Scrolling down -> hide navbar
+									header.classList.add('nav-hidden');
+								} else if (currentScrollY < lastScrollY - 4 || currentScrollY <= 80) {
+									// Scrolling up or near top -> show navbar
+									header.classList.remove('nav-hidden');
+								}
+							}
+
+							lastScrollY = Math.max(0, currentScrollY);
+							ticking = false;
+						});
+						ticking = true;
+					}
+				}, { passive: true });
+			}
+
+			// Parallax subtle shifts for desktop pointer
 			const canParallax = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 800px)');
 			if (canParallax.matches && !reduceMotion.matches) {
 				const layers = document.querySelectorAll<HTMLElement>('[data-parallax]');

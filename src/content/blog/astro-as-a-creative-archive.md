@@ -5,6 +5,8 @@ publishedAt: "2026-05-09"
 tags: ["Astro", "内容结构", "个人网站"]
 featured: true
 draft: false
+lang: cn
+hasTranslation: false
 ---
 
 个人网站最容易停在“首页很好看，内容很久没更新”。问题往往不在设计，而在每次更新都需要重新理解页面结构。

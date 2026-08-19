@@ -8,13 +8,13 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 	.sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
 ---
 
-<Layout title="博客" description="关于创意开发、视觉设计、互动体验与个人项目复盘的中文文章。">
+<Layout title="博客" description="关于创意开发、视觉设计、互动体验与个人项目复盘的文章。">
 	<header class="page-hero page-hero--blog">
 		<div class="page-hero__inner shell">
 			<span class="page-hero__stamp page-hero__stamp--orange" aria-hidden="true">NOTES / 02</span>
-			<p class="eyebrow">BLOG / 创作笔记</p>
+			<p class="eyebrow" data-i18n-key="blog.latestNotes">BLOG / 创作笔记</p>
 			<h1 class="display">THINK,<br /><span class="poster-label">MAKE,</span> REPEAT.</h1>
-			<p class="page-hero__lede">记录做东西时遇见的问题、放弃的方向，以及下一次想试得更好的地方。</p>
+			<p class="page-hero__lede" data-i18n-key="blog.intro">记录做东西时遇见的问题、放弃的方向，以及下一次想试得更好的地方。</p>
 		</div>
 	</header>
 
@@ -22,10 +22,10 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 		<div class="shell">
 			<div class="listing-section__intro" data-reveal>
 				<div>
-					<p class="eyebrow">LATEST NOTES / 全部文章</p>
-					<h2 id="post-list-title">从最近写起</h2>
+					<p class="eyebrow" data-i18n-key="blog.latestNotes">LATEST NOTES / 全部文章</p>
+					<h2 id="post-list-title" data-i18n-key="blog.heading">从最近写起</h2>
 				</div>
-				<p>共 {posts.length} 篇公开笔记，按发布日期由新到旧排列。</p>
+				<p><span data-i18n-text-count>共 {posts.length} 篇公开笔记，支持语言标识与翻译版本查看。</span></p>
 			</div>
 			<div class="blog-list">
 				{posts.map((post, index) => <BlogCard post={post} index={index} />)}
@@ -35,9 +35,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 
 	<section class="archive-cta archive-cta--blue">
 		<div class="archive-cta__inner shell" data-reveal>
-			<p class="script">less polish, more process.</p>
-			<h2>文字之外，也看看作品。</h2>
-			<a class="button button--ink" href="/projects/">浏览项目档案 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+			<p class="script" data-i18n-key="blog.cta.quote">less polish, more process.</p>
+			<h2 data-i18n-key="blog.cta.title">文字之外，也看看作品。</h2>
+			<a class="button button--ink" href="/projects/"><span data-i18n-key="blog.cta.button">浏览项目档案</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</section>
 </Layout>

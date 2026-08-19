@@ -11,8 +11,8 @@ import ArrowUp from '@lucide/astro/icons/arrow-up';
 		</div>
 		<div class="site-footer__meta">
 			<p>© {new Date().getFullYear()} {siteConfig.identity.name}</p>
-			<p>用 Astro、纸张质感与一点好奇心制作。</p>
-			<a href="#main-content">回到页首 <ArrowUp class="icon" size={16} stroke-width={2.5} /></a>
+			<p data-i18n-key="common.madeWith">用 Astro、纸张质感与一点好奇心制作。</p>
+			<a href="#main-content"><span data-i18n-key="common.backToTop">回到页首</span> <ArrowUp class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</div>
 </footer>

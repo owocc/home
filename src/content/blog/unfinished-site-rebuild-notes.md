@@ -5,6 +5,8 @@ publishedAt: "2026-08-01"
 tags: ["草稿", "个人网站"]
 featured: false
 draft: true
+lang: cn
+hasTranslation: false
 ---
 
 ## 草稿说明

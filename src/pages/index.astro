@@ -53,7 +53,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 					<strong>{siteConfig.identity.role}</strong>
 				</p>
 				<p class="home-hero__intro">{siteConfig.identity.intro}</p>
-				<a class="button" href="#projects">向下看看 <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
+				<a class="button" href="#projects"><span data-i18n-key="home.scrollDown">向下看看</span> <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -67,15 +67,15 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 					<span class="home-about__doodle script" aria-hidden="true">that feels right <ArrowRight class="icon" size={25} stroke-width={2.2} /></span>
 				</div>
 				<div class="home-about__copy paper-panel" data-reveal>
-					<p class="eyebrow">你好，我是 {siteConfig.identity.name}</p>
+					<p class="eyebrow"><span data-i18n-key="home.aboutTitle">你好，我是</span> {siteConfig.identity.name}</p>
 					{siteConfig.identity.bio.map((paragraph) => <p>{paragraph}</p>)}
 					<dl class="home-about__facts">
 						<div>
-							<dt>所在地</dt>
+							<dt data-i18n-key="common.location">所在地</dt>
 							<dd>{siteConfig.identity.location}</dd>
 						</div>
 						<div>
-							<dt>当前状态</dt>
+							<dt data-i18n-key="common.status">当前状态</dt>
 							<dd>{siteConfig.identity.availability}</dd>
 						</div>
 					</dl>
@@ -94,7 +94,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{projects.map((project, index) => <ProjectCard project={project} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button button--ink" href="/projects/">查看全部项目 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+				<a class="button button--ink" href="/projects/"><span data-i18n-key="home.viewAllProjects">查看全部项目</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -139,7 +139,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{posts.map((post, index) => <BlogCard post={post} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button" href="/blog/">翻阅全部文章 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+				<a class="button" href="/blog/"><span data-i18n-key="home.viewAllBlog">翻阅全部文章</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>

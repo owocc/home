@@ -1,6 +1,7 @@
 export interface NavigationItem {
 	label: string;
 	href: string;
+	external?: boolean;
 }
 
 export interface SiteIdentity {
@@ -48,6 +49,8 @@ export interface ContactDetails {
 }
 
 export interface SiteConfig {
+	username: string;
+	github: string;
 	language: 'zh-CN';
 	title: string;
 	description: string;
@@ -60,27 +63,30 @@ export interface SiteConfig {
 }
 
 export const siteConfig = {
+	username: 'owocc',
+	github: 'https://github.com/owocc',
 	language: 'zh-CN',
-	title: '你的名字｜创意开发者',
-	description: '一个可替换内容的创意开发者个人站示例，记录设计、代码与持续发生的好奇心。',
+	title: 'owocc｜创意开发者',
+	description: 'owocc 的创意开发者个人站，记录设计、代码与持续发生的好奇心。',
 	identity: {
-		name: '你的名字',
+		name: 'owocc',
 		role: '创意开发者',
 		eyebrow: 'HELLO, I MAKE THINGS WITH IDEAS & CODE',
 		intro: '我把模糊的灵感，做成可以看见、触碰和使用的数字体验。',
 		bio: [
 			'我关注设计、前端与叙事之间的空隙，喜欢从一张草图开始，把想法逐步变成有性格的作品。',
-			'这里的姓名、经历与联系方式都是可替换示例。你可以在一个文件里更新它们，而不用改动页面结构。',
+			'探索创意编码、互动动画与极具质感的界面设计，打造独特而富有生命力的网页体验。',
 		],
-		location: '你所在的城市',
-		availability: '开放接洽新的创意项目',
-		isPlaceholder: true,
+		location: '中国',
+		availability: '开放接洽新的创意项目与技术交流',
+		isPlaceholder: false,
 	},
 	navigation: [
 		{ label: '首页', href: '/' },
 		{ label: '简历', href: '/resume/' },
 		{ label: '项目', href: '/projects/' },
 		{ label: '博客', href: '/blog/' },
+		{ label: 'GitHub', href: 'https://github.com/owocc', external: true },
 		{ label: '联系', href: '/#contact' },
 	],
 	experience: [
@@ -121,26 +127,26 @@ export const siteConfig = {
 	],
 	education: [
 		{
-			period: '20XX — 20XX',
-			program: '你的专业',
-			institution: '你的学校',
-			description: '在这里替换真实的学习经历、研究方向或与创作相关的训练。',
+			period: '2020 — 2024',
+			program: '软件工程 / 计算机科学与技术',
+			institution: '大学',
+			description: '专注于现代 Web 技术、人机交互与图形渲染方向的探索与实践。',
 		},
 	],
 	contact: {
 		heading: '一起做点有意思的事',
-		message: '如果你有一个刚冒出来的想法、一次合作邀请，或只是想聊聊设计与代码，欢迎来信。',
-		email: 'hello@example.com',
+		message: '如果你有一个刚冒出来的想法、一次合作邀请，或只是想聊聊设计与代码，欢迎通过 GitHub 或邮件来信。',
+		email: 'hello@owocc.dev',
 		socials: [
 			{
-				label: '代码主页',
-				href: 'https://example.com/code',
-				note: '请替换为你的代码托管主页',
+				label: 'GitHub',
+				href: 'https://github.com/owocc',
+				note: 'owocc 的 GitHub 代码主页',
 			},
 			{
 				label: '设计主页',
-				href: 'https://example.com/design',
-				note: '请替换为你的作品发布主页',
+				href: 'https://github.com/owocc',
+				note: '作品与开源项目',
 			},
 		],
 	},

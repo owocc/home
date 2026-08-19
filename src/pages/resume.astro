@@ -1,6 +1,7 @@
 ---
-import mascotBust from '../assets/images/mascot-bust.png';
+
 import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
+import mascotBust from '../assets/images/mascot-bust.png';
 import SectionHeading from '../components/SectionHeading.astro';
 import siteConfig from '../data/site';
 import Layout from '../layouts/Layout.astro';
@@ -10,9 +11,9 @@ import Layout from '../layouts/Layout.astro';
 	<header class="page-hero page-hero--resume">
 		<div class="page-hero__inner shell">
 			<span class="page-hero__stamp page-hero__stamp--yellow" aria-hidden="true">CV / 2026</span>
-			<p class="eyebrow">RESUME / 个人简历</p>
-			<h1 class="display">IDEAS,<br /><span class="poster-label">DESIGN</span> & CODE.</h1>
-			<p class="page-hero__lede">把内容、视觉和前端实现放进同一条创作链路，让每个想法都找到清楚而有性格的表达。</p>
+			<p class="eyebrow" data-i18n-key="nav.resume">RESUME / 个人档案</p>
+			<h1 class="display">CODE,<br /><span class="poster-label">DESIGN,</span> ITERATE.</h1>
+			<p class="page-hero__lede">关于我的经历、技能构成，以及在不同阶段里如何把想法做成可用产品的记录。</p>
 		</div>
 	</header>
 
@@ -22,22 +23,23 @@ import Layout from '../layouts/Layout.astro';
 				<div class="resume-portrait__backdrop" aria-hidden="true"></div>
 				<img
 					src={mascotBust.src}
+					alt={`${siteConfig.identity.name} 的像素纸张风卡通肖像`}
 					width={mascotBust.width}
 					height={mascotBust.height}
-					alt="戴着耳机、穿黑色上衣的卡通人物半身像"
 					loading="eager"
+					decoding="async"
 				/>
-				<span class="resume-portrait__label script" aria-hidden="true">that's me!</span>
+				<span class="resume-portrait__label script" aria-hidden="true">maker & builder</span>
 			</div>
 			<div class="resume-profile__copy" data-reveal>
 				<p class="eyebrow">PROFILE / 自我介绍</p>
-				<h2 id="profile-title">你好，我是 {siteConfig.identity.name}。</h2>
+				<h2 id="profile-title"><span data-i18n-key="home.aboutTitle">你好，我是</span> {siteConfig.identity.name}。</h2>
 				<p class="resume-profile__lead">{siteConfig.identity.intro}</p>
 				{siteConfig.identity.bio.map((paragraph) => <p>{paragraph}</p>)}
 				<dl class="resume-profile__facts">
-					<div><dt>角色</dt><dd>{siteConfig.identity.role}</dd></div>
-					<div><dt>所在地</dt><dd>{siteConfig.identity.location}</dd></div>
-					<div><dt>状态</dt><dd>{siteConfig.identity.availability}</dd></div>
+					<div><dt data-i18n-key="common.role">角色</dt><dd>{siteConfig.identity.role}</dd></div>
+					<div><dt data-i18n-key="common.location">所在地</dt><dd>{siteConfig.identity.location}</dd></div>
+					<div><dt data-i18n-key="common.status">状态</dt><dd>{siteConfig.identity.availability}</dd></div>
 				</dl>
 			</div>
 		</div>
@@ -45,19 +47,23 @@ import Layout from '../layouts/Layout.astro';
 
 	<section class="section resume-experience" aria-labelledby="experience-title">
 		<div class="shell">
-			<SectionHeading id="experience-title" eyebrow="EXPERIENCE / 经历" title="一路做过的事" number="01" />
+			<SectionHeading id="experience-title" eyebrow="EXPERIENCE / 经历" title="工作与实践记录" number="01" />
 			<div class="resume-timeline">
 				{siteConfig.experience.map((item, index) => (
 					<article class="resume-entry" data-reveal>
 						<div class="resume-entry__rail" aria-hidden="true">
 							<span class="display">{String(index + 1).padStart(2, '0')}</span>
 						</div>
-						<div class="resume-entry__content">
-							<p class="eyebrow">{item.period}</p>
-							<h3>{item.role}</h3>
-							<p class="resume-entry__org">{item.organization}</p>
+						<div class="resume-entry__content paper-panel">
+							<div class="resume-entry__header">
+								<div>
+									<p class="eyebrow">{item.period}</p>
+									<h3>{item.role}</h3>
+								</div>
+								<p class="resume-entry__org">{item.organization}</p>
+							</div>
 							<p>{item.summary}</p>
-							<ul>
+							<ul class="resume-entry__highlights">
 								{item.highlights.map((highlight) => <li>{highlight}</li>)}
 							</ul>
 						</div>
@@ -67,9 +73,9 @@ import Layout from '../layouts/Layout.astro';
 		</div>
 	</section>
 
-	<section class="section resume-toolbox" aria-labelledby="skills-title">
+	<section class="section resume-toolbox" aria-labelledby="toolbox-title">
 		<div class="shell">
-			<SectionHeading id="skills-title" eyebrow="TOOLBOX / 技能" title="常用的方法与工具" number="02" />
+			<SectionHeading id="toolbox-title" eyebrow="SKILLS / 技能" title="平时常用的工具与方法" number="02" />
 			<div class="resume-toolbox__grid">
 				{siteConfig.skills.map((group, index) => (
 					<article class="toolbox-card" data-reveal>
@@ -86,7 +92,7 @@ import Layout from '../layouts/Layout.astro';
 
 	<section class="section resume-education" aria-labelledby="education-title">
 		<div class="shell">
-			<SectionHeading id="education-title" eyebrow="EDUCATION / 教育" title="学习经历" number="03" />
+			<SectionHeading id="education-title" eyebrow="EDUCATION / 教育背景" title="学习与训练" number="03" />
 			<div class="resume-education__list">
 				{siteConfig.education.map((item) => (
 					<article class="education-card paper-panel" data-reveal>
@@ -107,7 +113,7 @@ import Layout from '../layouts/Layout.astro';
 				<h2>{siteConfig.contact.heading}</h2>
 				<p>{siteConfig.contact.message}</p>
 			</div>
-			<a class="button button--ink" href={`mailto:${siteConfig.contact.email}`}>发送邮件 <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+			<a class="button button--ink" href={`mailto:${siteConfig.contact.email}`}><span data-i18n-key="common.sendEmail">发送邮件</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 		</div>
 	</section>
 </Layout>

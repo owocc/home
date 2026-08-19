@@ -1,38 +1,251 @@
 ---
-import siteConfig from '../data/site';
-import Sparkles from '@lucide/astro/icons/sparkles';
+import siteConfig, { type NavigationItem } from "../data/site";
+import Sun from "@lucide/astro/icons/sun";
+import Moon from "@lucide/astro/icons/moon";
+import Menu from "@lucide/astro/icons/menu";
+import X from "@lucide/astro/icons/x";
+import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
+import Globe from "@lucide/astro/icons/globe";
 
 interface Props {
-	currentPath: string;
+    currentPath: string;
 }
 
 const { currentPath } = Astro.props;
 const isCurrent = (href: string) => {
-	if (href === '/') return currentPath === '/';
-	if (href.includes('#')) return false;
-	return currentPath.startsWith(href);
+    if (href === "/") return currentPath === "/";
+    if (href.includes("#")) return false;
+    return currentPath.startsWith(href);
 };
+const navItems = siteConfig.navigation as readonly NavigationItem[];
 ---
 
-<header class="site-header">
-	<div class="site-header__inner shell">
-		<a class="site-brand" href="/" aria-label={`${siteConfig.identity.name}，返回首页`}>
-			<span class="site-brand__mark" aria-hidden="true"><Sparkles class="icon" size={22} stroke-width={2.4} /></span>
-			<span>
-				<strong>{siteConfig.identity.name}</strong>
-				<small>{siteConfig.identity.role}</small>
-			</span>
-		</a>
-		<nav class="site-nav" aria-label="主导航">
-			<ul>
-				{siteConfig.navigation.map((item) => (
-					<li>
-						<a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
-							{item.label}
-						</a>
-					</li>
-				))}
-			</ul>
-		</nav>
-	</div>
+<header class="site-header" id="site-header">
+    <div class="site-header__inner shell">
+        <a
+            class="site-brand"
+            href="/"
+            aria-label={`${siteConfig.identity.name}，返回首页`}
+        >
+            <div class="site-brand__mark" aria-hidden="true">
+                <img src="/logo.png" alt="" />
+            </div>
+            <div class="site-brand__text">
+                <span class="site-brand__name">{siteConfig.username}</span>
+            </div>
+        </a>
+
+        <div class="site-header__right">
+            <nav class="site-nav" id="site-nav" aria-label="主导航">
+                <ul>
+                    {
+                        navItems.map((item) => (
+                            <li>
+                                <a
+                                    href={item.href}
+                                    target={item.external ? "_blank" : undefined}
+                                    rel={item.external ? "noopener noreferrer" : undefined}
+                                    aria-current={
+                                        isCurrent(item.href) ? "page" : undefined
+                                    }
+                                    data-nav-href={item.href}
+                                >
+                                    <span data-i18n-key={`nav.${item.href === '/' ? 'home' : item.href.replace(/[/_#]/g, '')}`}>{item.label}</span>
+                                    {item.external && (
+                                        <ArrowUpRight class="icon" size={14} stroke-width={2.4} />
+                                    )}
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </nav>
+
+            <div class="site-header__controls">
+                <!-- Language Switcher Button -->
+                <button
+                    type="button"
+                    class="lang-toggle-btn"
+                    id="lang-toggle"
+                    aria-label="切换语言 / Switch Language"
+                    title="切换语言 / Switch Language"
+                >
+                    <Globe class="icon" size={16} stroke-width={2.3} />
+                    <span id="current-lang-text">CN</span>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button
+                    type="button"
+                    class="theme-toggle"
+                    id="theme-toggle"
+                    aria-label="切换深色/浅色模式"
+                    title="切换主题"
+                >
+                    <Sun class="icon-sun" size={20} stroke-width={2.2} />
+                    <Moon class="icon-moon" size={20} stroke-width={2.2} />
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button
+                    type="button"
+                    class="mobile-menu-btn"
+                    id="mobile-menu-toggle"
+                    aria-expanded="false"
+                    aria-controls="site-nav"
+                    aria-label="打开导航菜单"
+                >
+                    <Menu class="icon-menu" size={22} stroke-width={2.4} />
+                    <X class="icon-close" size={22} stroke-width={2.4} style="display: none;" />
+                </button>
+            </div>
+        </div>
+    </div>
 </header>
+
+<script>
+    import { ui, type Language } from '../data/i18n';
+
+    // Theme toggle handling
+    const initThemeToggle = () => {
+        const themeBtn = document.getElementById('theme-toggle');
+        if (!themeBtn) return;
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            let nextTheme: 'dark' | 'light';
+
+            if (currentTheme) {
+                nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                nextTheme = prefersDark ? 'light' : 'dark';
+            }
+
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            try {
+                localStorage.setItem('theme', nextTheme);
+            } catch (e) {
+                // Ignore storage errors
+            }
+        });
+    };
+
+    // Language toggle handling
+    const initLangToggle = () => {
+        const langBtn = document.getElementById('lang-toggle');
+        const langText = document.getElementById('current-lang-text');
+
+        const updatePageLanguage = (lang: Language) => {
+            document.documentElement.setAttribute('lang', lang === 'en' ? 'en-US' : 'zh-CN');
+            document.documentElement.setAttribute('data-lang', lang);
+            if (langText) {
+                langText.textContent = lang === 'en' ? 'EN' : 'CN';
+            }
+
+            // Update elements with data-i18n-key
+            document.querySelectorAll<HTMLElement>('[data-i18n-key]').forEach((el) => {
+                const key = el.getAttribute('data-i18n-key') as keyof typeof ui['cn'];
+                if (key && ui[lang] && ui[lang][key]) {
+                    el.textContent = ui[lang][key];
+                }
+            });
+
+            // Update blog card badges if present
+            document.querySelectorAll<HTMLElement>('[data-i18n-trans-badge]').forEach((el) => {
+                const type = el.getAttribute('data-i18n-trans-badge');
+                if (type === 'has-en') {
+                    el.textContent = lang === 'en' ? 'EN Available' : '有 EN 译文';
+                } else if (type === 'has-cn') {
+                    el.textContent = lang === 'en' ? 'CN Available' : '有 CN 中文版';
+                }
+            });
+
+            // Dispatch global event for other listeners
+            window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
+        };
+
+        // Read stored language or default to 'cn'
+        let currentLang: Language = 'cn';
+        try {
+            const stored = localStorage.getItem('site_lang');
+            if (stored === 'en' || stored === 'cn') {
+                currentLang = stored;
+            }
+        } catch (e) {}
+
+        updatePageLanguage(currentLang);
+
+        if (langBtn) {
+            langBtn.addEventListener('click', () => {
+                const nextLang: Language = currentLang === 'cn' ? 'en' : 'cn';
+                currentLang = nextLang;
+                try {
+                    localStorage.setItem('site_lang', nextLang);
+                } catch (e) {}
+                updatePageLanguage(nextLang);
+            });
+        }
+    };
+
+    // Mobile nav menu handling
+    const initMobileNav = () => {
+        const header = document.getElementById('site-header');
+        const menuBtn = document.getElementById('mobile-menu-toggle');
+        const nav = document.getElementById('site-nav');
+        if (!header || !menuBtn || !nav) return;
+
+        const iconMenu = menuBtn.querySelector('.icon-menu') as HTMLElement | null;
+        const iconClose = menuBtn.querySelector('.icon-close') as HTMLElement | null;
+
+        const toggleMenu = (open?: boolean) => {
+            const willOpen = typeof open === 'boolean' ? open : !header.classList.contains('nav-open');
+            if (willOpen) {
+                header.classList.add('nav-open');
+                menuBtn.setAttribute('aria-expanded', 'true');
+                menuBtn.setAttribute('aria-label', '关闭导航菜单');
+                if (iconMenu && iconClose) {
+                    iconMenu.style.display = 'none';
+                    iconClose.style.display = 'block';
+                }
+                document.body.style.overflow = 'hidden';
+            } else {
+                header.classList.remove('nav-open');
+                menuBtn.setAttribute('aria-expanded', 'false');
+                menuBtn.setAttribute('aria-label', '打开导航菜单');
+                if (iconMenu && iconClose) {
+                    iconMenu.style.display = 'block';
+                    iconClose.style.display = 'none';
+                }
+                document.body.style.overflow = '';
+            }
+        };
+
+        menuBtn.addEventListener('click', () => toggleMenu());
+
+        // Close menu when clicking nav links
+        nav.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+                toggleMenu(false);
+            });
+        });
+
+        // Close menu on Esc key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && header.classList.contains('nav-open')) {
+                toggleMenu(false);
+            }
+        });
+
+        // Close menu if resized to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 900 && header.classList.contains('nav-open')) {
+                toggleMenu(false);
+            }
+        }, { passive: true });
+    };
+
+    initThemeToggle();
+    initLangToggle();
+    initMobileNav();
+</script>
