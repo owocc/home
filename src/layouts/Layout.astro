@@ -64,32 +64,43 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 
 		<!-- Immediate Theme and Language Detection to Prevent FOUC -->
 		<script is:inline>
-			(function() {
+			(function () {
 				document.documentElement.classList.add('js');
-				
-				// Theme init
-				try {
-					var storedTheme = localStorage.getItem('theme');
-					if (storedTheme === 'dark' || storedTheme === 'light') {
-						document.documentElement.setAttribute('data-theme', storedTheme);
-					} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-						document.documentElement.setAttribute('data-theme', 'dark');
-					} else {
-						document.documentElement.setAttribute('data-theme', 'light');
-					}
-				} catch (e) {}
 
-				// Language init (default 'cn')
-				try {
-					var storedLang = localStorage.getItem('site_lang');
-					if (storedLang === 'en' || storedLang === 'cn') {
-						document.documentElement.setAttribute('data-lang', storedLang);
-						document.documentElement.setAttribute('lang', storedLang === 'en' ? 'en-US' : 'zh-CN');
-					} else {
-						document.documentElement.setAttribute('data-lang', 'cn');
-						document.documentElement.setAttribute('lang', 'zh-CN');
-					}
-				} catch (e) {}
+				function getStoredTheme() {
+					try {
+						var t = localStorage.getItem('theme');
+						if (t === 'dark' || t === 'light' || t === 'system') return t;
+					} catch (e) {}
+					return null;
+				}
+				function getTheme() {
+					var s = getStoredTheme();
+					return s ? s : 'system';
+				}
+				function applyTheme(target, theme) {
+					target.setAttribute('data-theme', theme);
+				}
+				function getStoredLang() {
+					try {
+						var l = localStorage.getItem('site_lang');
+						if (l === 'en' || l === 'cn') return l;
+					} catch (e) {}
+					return 'cn';
+				}
+				function applyLang(target, lang) {
+					target.setAttribute('data-lang', lang);
+					target.setAttribute('lang', lang === 'en' ? 'en-US' : 'zh-CN');
+				}
+
+				applyTheme(document.documentElement, getTheme());
+				applyLang(document.documentElement, getStoredLang());
+
+				// Persist theme/lang across Astro View Transitions (ClientRouter)
+				document.addEventListener('astro:before-swap', function (e) {
+					applyTheme(e.newDocument.documentElement, getTheme());
+					applyLang(e.newDocument.documentElement, getStoredLang());
+				});
 			})();
 		</script>
 	</head>

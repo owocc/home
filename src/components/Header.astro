@@ -2,6 +2,7 @@
 import siteConfig, { type NavigationItem } from "../data/site";
 import Sun from "@lucide/astro/icons/sun";
 import Moon from "@lucide/astro/icons/moon";
+import Monitor from "@lucide/astro/icons/monitor";
 import Menu from "@lucide/astro/icons/menu";
 import X from "@lucide/astro/icons/x";
 import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
@@ -22,17 +23,8 @@ const navItems = siteConfig.navigation as readonly NavigationItem[];
 
 <header class="site-header" id="site-header">
     <div class="site-header__inner shell">
-        <a
-            class="site-brand"
-            href="/"
-            aria-label={`${siteConfig.identity.name}，返回首页`}
-        >
-            <div class="site-brand__mark" aria-hidden="true">
-                <img src="/logo.png" alt="" />
-            </div>
-            <div class="site-brand__text">
-                <span class="site-brand__name">{siteConfig.username}</span>
-            </div>
+        <a class="site-brand" href="/" aria-label={`${siteConfig.identity.name}，返回首页`}>
+            <span class="site-brand__name">{siteConfig.username}</span>
         </a>
 
         <div class="site-header__right">
@@ -73,17 +65,17 @@ const navItems = siteConfig.navigation as readonly NavigationItem[];
                     <Globe class="icon" size={16} stroke-width={2.3} />
                     <span id="current-lang-text">CN</span>
                 </button>
-
-                <!-- Theme Toggle Button -->
+                <!-- Theme Toggle Button: light -> dark -> system (cycle) -->
                 <button
                     type="button"
                     class="theme-toggle"
                     id="theme-toggle"
-                    aria-label="切换深色/浅色模式"
+                    aria-label="切换主题"
                     title="切换主题"
                 >
-                    <Sun class="icon-sun" size={20} stroke-width={2.2} />
-                    <Moon class="icon-moon" size={20} stroke-width={2.2} />
+                    <Sun class="icon-sun" size={20} stroke-width={2.2} aria-hidden="true" />
+                    <Moon class="icon-moon" size={20} stroke-width={2.2} aria-hidden="true" />
+                    <Monitor class="icon-monitor" size={20} stroke-width={2.2} aria-hidden="true" />
                 </button>
 
                 <!-- Mobile Menu Button -->
@@ -102,147 +94,174 @@ const navItems = siteConfig.navigation as readonly NavigationItem[];
         </div>
     </div>
 </header>
-
 <script>
     import { ui, type Language } from '../data/i18n';
 
-    // Theme toggle handling
+    type Theme = 'light' | 'dark' | 'system';
+    const THEME_ORDER: readonly Theme[] = ['light', 'dark', 'system'];
+    const isTheme = (v: unknown): v is Theme => v === 'light' || v === 'dark' || v === 'system';
+
+    let currentLang: Language = 'cn';
+    let mobileNavWindowListenersBound = false;
+
+    function getStoredTheme(): Theme {
+        try {
+            const t = localStorage.getItem('theme');
+            if (isTheme(t)) return t;
+        } catch (e) {}
+        return 'system';
+    }
+    function nextTheme(t: Theme): Theme {
+        const i = THEME_ORDER.indexOf(t);
+        return THEME_ORDER[(i + 1) % THEME_ORDER.length];
+    }
+    const THEME_LABEL: Record<Theme, string> = {
+        light: '浅色模式',
+        dark: '深色模式',
+        system: '跟随系统',
+    };
+    function themeA11y(theme: Theme): string {
+        return `${THEME_LABEL[theme]} — 点击切换`;
+    }
+    function syncThemeButton() {
+        const btn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+        if (!btn) return;
+        const t = getStoredTheme();
+        // Also fall back to DOM if localStorage not yet written (first visit).
+        const dom = document.documentElement.getAttribute('data-theme');
+        const theme: Theme = isTheme(t) ? t : isTheme(dom) ? (dom as Theme) : 'system';
+        btn.setAttribute('aria-label', themeA11y(theme));
+        // Tooltip shows current state + hint; accessible name is the aria-label.
+        const hint = `当前：${THEME_LABEL[theme]}（${THEME_LABEL[nextTheme(theme)]}）`;
+        btn.setAttribute('title', hint);
+        btn.setAttribute('data-theme-state', theme);
+    }
+
+    // Theme toggle — per-element guard; new header after swap gets a fresh button.
     const initThemeToggle = () => {
-        const themeBtn = document.getElementById('theme-toggle');
+        syncThemeButton();
+        const themeBtn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
         if (!themeBtn) return;
+        if (themeBtn.dataset.bound === '1') return;
+        themeBtn.dataset.bound = '1';
 
         themeBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            let nextTheme: 'dark' | 'light';
-
-            if (currentTheme) {
-                nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            } else {
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                nextTheme = prefersDark ? 'light' : 'dark';
-            }
-
-            document.documentElement.setAttribute('data-theme', nextTheme);
+            const cur = getStoredTheme();
+            const nxt = nextTheme(cur);
+            document.documentElement.setAttribute('data-theme', nxt);
             try {
-                localStorage.setItem('theme', nextTheme);
-            } catch (e) {
-                // Ignore storage errors
-            }
+                localStorage.setItem('theme', nxt);
+            } catch (e) {}
+            syncThemeButton();
         });
     };
 
-    // Language toggle handling
-    const initLangToggle = () => {
-        const langBtn = document.getElementById('lang-toggle');
+    const syncLanguage = () => {
         const langText = document.getElementById('current-lang-text');
-
-        const updatePageLanguage = (lang: Language) => {
-            document.documentElement.setAttribute('lang', lang === 'en' ? 'en-US' : 'zh-CN');
-            document.documentElement.setAttribute('data-lang', lang);
-            if (langText) {
-                langText.textContent = lang === 'en' ? 'EN' : 'CN';
-            }
-
-            // Update elements with data-i18n-key
-            document.querySelectorAll<HTMLElement>('[data-i18n-key]').forEach((el) => {
-                const key = el.getAttribute('data-i18n-key') as keyof typeof ui['cn'];
-                if (key && ui[lang] && ui[lang][key]) {
-                    el.textContent = ui[lang][key];
-                }
-            });
-
-            // Update blog card badges if present
-            document.querySelectorAll<HTMLElement>('[data-i18n-trans-badge]').forEach((el) => {
-                const type = el.getAttribute('data-i18n-trans-badge');
-                if (type === 'has-en') {
-                    el.textContent = lang === 'en' ? 'EN Available' : '有 EN 译文';
-                } else if (type === 'has-cn') {
-                    el.textContent = lang === 'en' ? 'CN Available' : '有 CN 中文版';
-                }
-            });
-
-            // Dispatch global event for other listeners
-            window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang } }));
-        };
-
-        // Read stored language or default to 'cn'
-        let currentLang: Language = 'cn';
         try {
             const stored = localStorage.getItem('site_lang');
-            if (stored === 'en' || stored === 'cn') {
-                currentLang = stored;
-            }
-        } catch (e) {}
-
-        updatePageLanguage(currentLang);
-
-        if (langBtn) {
-            langBtn.addEventListener('click', () => {
-                const nextLang: Language = currentLang === 'cn' ? 'en' : 'cn';
-                currentLang = nextLang;
-                try {
-                    localStorage.setItem('site_lang', nextLang);
-                } catch (e) {}
-                updatePageLanguage(nextLang);
-            });
+            currentLang = stored === 'en' || stored === 'cn' ? stored : 'cn';
+        } catch (e) {
+            currentLang = 'cn';
         }
+        document.documentElement.setAttribute('lang', currentLang === 'en' ? 'en-US' : 'zh-CN');
+        document.documentElement.setAttribute('data-lang', currentLang);
+        if (langText) langText.textContent = currentLang === 'en' ? 'EN' : 'CN';
+        document.querySelectorAll<HTMLElement>('[data-i18n-key]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-key') as keyof typeof ui['cn'];
+            if (key && ui[currentLang] && ui[currentLang][key]) el.textContent = ui[currentLang][key];
+        });
+        document.querySelectorAll<HTMLElement>('[data-i18n-trans-badge]').forEach((el) => {
+            const type = el.getAttribute('data-i18n-trans-badge');
+            if (type === 'has-en') el.textContent = currentLang === 'en' ? 'EN Available' : '有 EN 译文';
+            else if (type === 'has-cn') el.textContent = currentLang === 'en' ? 'CN Available' : '有 CN 中文版';
+        });
+        window.dispatchEvent(new CustomEvent('languagechange', { detail: { lang: currentLang } }));
     };
 
-    // Mobile nav menu handling
+    const initLangToggle = () => {
+        syncLanguage();
+        const langBtn = document.getElementById('lang-toggle') as HTMLButtonElement | null;
+        if (!langBtn || langBtn.dataset.bound === '1') return;
+        langBtn.dataset.bound = '1';
+        langBtn.addEventListener('click', () => {
+            const nextLang: Language = currentLang === 'cn' ? 'en' : 'cn';
+            currentLang = nextLang;
+            try {
+                localStorage.setItem('site_lang', nextLang);
+            } catch (e) {}
+            syncLanguage();
+        });
+    };
+
     const initMobileNav = () => {
         const header = document.getElementById('site-header');
-        const menuBtn = document.getElementById('mobile-menu-toggle');
+        const menuBtn = document.getElementById('mobile-menu-toggle') as HTMLButtonElement | null;
         const nav = document.getElementById('site-nav');
         if (!header || !menuBtn || !nav) return;
 
-        const iconMenu = menuBtn.querySelector('.icon-menu') as HTMLElement | null;
-        const iconClose = menuBtn.querySelector('.icon-close') as HTMLElement | null;
-
-        const toggleMenu = (open?: boolean) => {
-            const willOpen = typeof open === 'boolean' ? open : !header.classList.contains('nav-open');
-            if (willOpen) {
-                header.classList.add('nav-open');
-                menuBtn.setAttribute('aria-expanded', 'true');
-                menuBtn.setAttribute('aria-label', '关闭导航菜单');
-                if (iconMenu && iconClose) {
-                    iconMenu.style.display = 'none';
-                    iconClose.style.display = 'block';
+        const alreadyBound = menuBtn.dataset.bound === '1';
+        if (!alreadyBound) {
+            menuBtn.dataset.bound = '1';
+            const iconMenu = menuBtn.querySelector('.icon-menu') as HTMLElement | null;
+            const iconClose = menuBtn.querySelector('.icon-close') as HTMLElement | null;
+            const toggleMenu = (open?: boolean) => {
+                const willOpen = typeof open === 'boolean' ? open : !header.classList.contains('nav-open');
+                if (willOpen) {
+                    header.classList.add('nav-open');
+                    menuBtn.setAttribute('aria-expanded', 'true');
+                    menuBtn.setAttribute('aria-label', '关闭导航菜单');
+                    if (iconMenu && iconClose) {
+                        iconMenu.style.display = 'none';
+                        iconClose.style.display = 'block';
+                    }
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    header.classList.remove('nav-open');
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                    menuBtn.setAttribute('aria-label', '打开导航菜单');
+                    if (iconMenu && iconClose) {
+                        iconMenu.style.display = 'block';
+                        iconClose.style.display = 'none';
+                    }
+                    document.body.style.overflow = '';
                 }
-                document.body.style.overflow = 'hidden';
-            } else {
-                header.classList.remove('nav-open');
-                menuBtn.setAttribute('aria-expanded', 'false');
-                menuBtn.setAttribute('aria-label', '打开导航菜单');
-                if (iconMenu && iconClose) {
-                    iconMenu.style.display = 'block';
-                    iconClose.style.display = 'none';
-                }
-                document.body.style.overflow = '';
-            }
-        };
-
-        menuBtn.addEventListener('click', () => toggleMenu());
-
-        // Close menu when clicking nav links
-        nav.querySelectorAll('a').forEach((link) => {
-            link.addEventListener('click', () => {
-                toggleMenu(false);
+            };
+            menuBtn.addEventListener('click', () => toggleMenu());
+            nav.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => toggleMenu(false));
             });
-        });
+        }
 
-        // Close menu on Esc key
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && header.classList.contains('nav-open')) {
-                toggleMenu(false);
-            }
-        });
-
-        // Close menu if resized to desktop
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 900 && header.classList.contains('nav-open')) {
-                toggleMenu(false);
-            }
-        }, { passive: true });
+        if (!mobileNavWindowListenersBound) {
+            mobileNavWindowListenersBound = true;
+            window.addEventListener('keydown', (e) => {
+                const h = document.getElementById('site-header');
+                if (e.key === 'Escape' && h?.classList.contains('nav-open')) {
+                    h.classList.remove('nav-open');
+                    document.body.style.overflow = '';
+                    const btn = document.getElementById('mobile-menu-toggle') as HTMLButtonElement | null;
+                    btn?.setAttribute('aria-expanded', 'false');
+                    btn?.setAttribute('aria-label', '打开导航菜单');
+                    const im = btn?.querySelector('.icon-menu') as HTMLElement | null;
+                    const ic = btn?.querySelector('.icon-close') as HTMLElement | null;
+                    if (im && ic) { im.style.display = 'block'; ic.style.display = 'none'; }
+                }
+            });
+            window.addEventListener('resize', () => {
+                const h = document.getElementById('site-header');
+                if (window.innerWidth > 900 && h?.classList.contains('nav-open')) {
+                    h.classList.remove('nav-open');
+                    document.body.style.overflow = '';
+                    const btn = document.getElementById('mobile-menu-toggle') as HTMLButtonElement | null;
+                    btn?.setAttribute('aria-expanded', 'false');
+                    btn?.setAttribute('aria-label', '打开导航菜单');
+                    const im = btn?.querySelector('.icon-menu') as HTMLElement | null;
+                    const ic = btn?.querySelector('.icon-close') as HTMLElement | null;
+                    if (im && ic) { im.style.display = 'block'; ic.style.display = 'none'; }
+                }
+            }, { passive: true });
+        }
     };
 
     const initHeader = () => {
