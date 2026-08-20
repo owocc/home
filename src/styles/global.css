@@ -2938,5 +2938,10 @@
 	.home-hero__character-art {
 		animation: none;
 	}
-
+	.not-found__sticker {
+		right: -4%;
+		bottom: -7%;
+		width: 72px;
+		font-size: 3rem;
+	}
 }

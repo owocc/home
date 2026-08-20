@@ -59,6 +59,87 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 		<title>{pageTitle}</title>
 
+		<style is:global>
+			.route-blob,
+			.cursor-blob {
+				pointer-events: none;
+			}
+			.route-blob {
+				position: fixed;
+				left: var(--blob-x, 50vw);
+				top: var(--blob-y, 50vh);
+				width: 24vmax;
+				height: 24vmax;
+				margin-left: -12vmax;
+				margin-top: -12vmax;
+				border-radius: 50%;
+				background: var(--ink);
+				z-index: 9998;
+				transform: scale(0);
+				opacity: 0;
+				visibility: hidden;
+				will-change: transform, border-radius, opacity;
+			}
+			.route-blob.is-active {
+				visibility: visible;
+				opacity: 1;
+			}
+			.route-blob__inner {
+				width: 100%;
+				height: 100%;
+				border-radius: inherit;
+				background: inherit;
+			}
+			.cursor-blob {
+				position: fixed;
+				left: 0;
+				top: 0;
+				width: 28px;
+				height: 28px;
+				margin-left: -14px;
+				margin-top: -14px;
+				border-radius: 50%;
+				background: color-mix(in srgb, var(--yellow) 88%, white);
+				border: 2.5px solid var(--ink);
+				box-shadow: 2px 2px 0 var(--ink);
+				z-index: 9999;
+				opacity: 0;
+				will-change: transform, border-radius, width, height, left, top, margin;
+				transition: opacity 220ms ease, width 160ms ease, height 160ms ease, margin 160ms ease, background 160ms ease;
+			}
+			.cursor-blob.is-visible {
+				opacity: 1;
+			}
+			.cursor-blob.is-hovering {
+				width: 42px;
+				height: 42px;
+				margin-left: -21px;
+				margin-top: -21px;
+				background: var(--orange);
+			}
+			.cursor-blob.is-squish {
+				border-radius: 42% 58% 38% 62% / 58% 42% 62% 38%;
+			}
+			@media (hover: hover) and (pointer: fine) {
+				html.has-blob-cursor,
+				html.has-blob-cursor body,
+				html.has-blob-cursor a,
+				html.has-blob-cursor button {
+					cursor: none !important;
+				}
+			}
+			@media (prefers-reduced-motion: reduce) {
+				.route-blob,
+				.cursor-blob {
+					display: none !important;
+				}
+			}
+			@media (hover: none), (pointer: coarse) {
+				.cursor-blob {
+					display: none !important;
+				}
+			}
+		</style>
 		<!-- Astro View Transitions for Smooth Page Animations -->
 		<ClientRouter />
 
@@ -105,6 +186,8 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 		</script>
 	</head>
 	<body>
+		<div class="route-blob" id="route-blob" data-route-blob aria-hidden="true" transition:persist><div class="route-blob__inner"></div></div>
+		<div class="cursor-blob" id="cursor-blob" aria-hidden="true" transition:persist></div>
 		<a class="skip-link" href="#main-content" data-i18n-key="skip.link">跳到主要内容</a>
 		<Header currentPath={currentPath} />
 
@@ -125,19 +208,15 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 				titleEls.forEach((h1) => {
 					if (reduceMotion) {
 						h1.style.visibility = 'visible';
-						// ensure any previous entrance wrappers are revealed
 						h1.querySelectorAll<HTMLElement>('.entrance-line').forEach((l) => {
 							l.style.opacity = '1';
 							l.style.transform = 'none';
 						});
 						return;
 					}
-
-					// Avoid re-wrapping on view-transition re-run
 					let lines: HTMLElement[] = Array.from(h1.querySelectorAll<HTMLElement>('.entrance-line'));
 					if (lines.length === 0) {
 						const html = h1.innerHTML;
-						// Split by <br> if present (most page-hero titles: "MADE WITH<br><span...")
 						if (/<br/i.test(html)) {
 							const parts = html.split(/<br\s*\/?>/i);
 							h1.innerHTML = '';
@@ -154,7 +233,6 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 								h1.appendChild(line);
 							});
 						} else {
-							// No <br>: wrap whole content as single line
 							const line = document.createElement('span');
 							line.className = 'entrance-line';
 							line.style.display = 'block';
@@ -167,27 +245,21 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 						}
 						lines = Array.from(h1.querySelectorAll<HTMLElement>('.entrance-line'));
 					}
-
 					if (lines.length === 0) return;
-
 					lines.forEach((line) => {
 						line.style.display = 'block';
 						line.style.transformOrigin = 'left center';
 						line.style.willChange = 'transform, opacity';
 						line.style.overflow = 'visible';
 					});
-
 					h1.style.overflow = 'hidden';
 					h1.style.visibility = 'visible';
 					h1.style.perspective = '900px';
 					h1.classList.add('is-entrance-ready');
-
 					gsap.killTweensOf(lines);
 					gsap.set(lines, { rotation: 10, xPercent: 6, yPercent: 10, autoAlpha: 0, transformOrigin: 'left center', force3D: true });
 					gsap.to(lines, { rotation: 0, xPercent: 0, yPercent: 0, autoAlpha: 1, duration: 0.78, ease: 'power3.out', stagger: 0.15, overwrite: 'auto' });
 				});
-
-				// Stagger the lede after hero title
 				const ledes = document.querySelectorAll<HTMLElement>('.page-hero__lede, .home-hero__intro, .home-hero__role');
 				if (ledes.length && !reduceMotion) {
 					gsap.killTweensOf(ledes);
@@ -198,6 +270,208 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 				}
 			};
 
+			// === Gooey ball cursor: circle <-> stretched shape on velocity ===
+			const initBlobCursor = () => {
+				const blob = document.getElementById('cursor-blob') as HTMLElement | null;
+				if (!blob) return;
+				const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+				const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+				if (reduceMotion.matches || !finePointer.matches) return;
+
+				let x = window.innerWidth / 2;
+				let y = window.innerHeight / 2;
+				let tx = x;
+				let ty = y;
+				let vx = 0;
+				let vy = 0;
+				let raf = 0;
+				let visible = false;
+				const speedThreshold = 18;
+				const squishThreshold = 28;
+
+				const show = () => {
+					if (!visible) {
+						visible = true;
+						document.documentElement.classList.add('has-blob-cursor');
+						blob.classList.add('is-visible');
+					}
+				};
+				const hide = () => {
+					visible = false;
+					document.documentElement.classList.remove('has-blob-cursor');
+					blob.classList.remove('is-visible');
+				};
+
+				const tick = () => {
+					raf = requestAnimationFrame(tick);
+					const dx = tx - x;
+					const dy = ty - y;
+					x += dx * 0.22;
+					y += dy * 0.22;
+					vx = dx;
+					vy = dy;
+					const speed = Math.hypot(vx, vy);
+					const angle = Math.atan2(vy, vx);
+					blob.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+					if (speed > speedThreshold) {
+						const stretch = Math.min(0.55, (speed - speedThreshold) / 90);
+						const sx = 1 + stretch * 0.9;
+						const sy = 1 - stretch * 0.55;
+						blob.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${sx}, ${sy})`;
+						if (speed > squishThreshold) blob.classList.add('is-squish');
+					} else {
+						blob.classList.remove('is-squish');
+					}
+					if (speed < 2) {
+						blob.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+						blob.classList.remove('is-squish');
+					}
+					if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+						cancelAnimationFrame(raf);
+						raf = 0;
+					}
+				};
+
+				const onMove = (e: PointerEvent) => {
+					tx = e.clientX;
+					ty = e.clientY;
+					show();
+					if (!raf) tick();
+				};
+				const onLeave = () => hide();
+				const onEnter = () => show();
+
+				window.addEventListener('pointermove', onMove, { passive: true });
+				window.addEventListener('pointerleave', onLeave);
+				window.addEventListener('pointerenter', onEnter);
+				document.addEventListener('mouseleave', onLeave);
+
+				const hoverSel = 'a, button, [role="button"], .gallery-card--link, .project-card__link';
+				document.addEventListener('mouseover', (e) => {
+					if ((e.target as Element).closest(hoverSel)) blob.classList.add('is-hovering');
+				});
+				document.addEventListener('mouseout', (e) => {
+					if ((e.target as Element).closest(hoverSel)) blob.classList.remove('is-hovering');
+				});
+
+				reduceMotion.addEventListener?.('change', () => {
+					if (reduceMotion.matches) {
+						hide();
+						cancelAnimationFrame(raf);
+						raf = 0;
+					}
+				});
+			};
+
+			// === Big circle wipe transition with Q-elastic (covers page on nav) ===
+			const initRouteBlob = () => {
+				const blob = document.getElementById('route-blob') as HTMLElement | null;
+				if (!blob) return;
+				const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+				if (reduceMotion.matches) return;
+
+				let navigating = false;
+				let pendingHref: string | null = null;
+				let clickX = window.innerWidth / 2;
+				let clickY = window.innerHeight / 2;
+				let fallbackTimer: number | null = null;
+
+				const setOrigin = (x: number, y: number) => {
+					blob.style.setProperty('--blob-x', `${x}px`);
+					blob.style.setProperty('--blob-y', `${y}px`);
+				};
+
+				const coversViewport = () => {
+					const base = blob.offsetWidth || Math.min(window.innerWidth, window.innerHeight) * 0.24;
+					const dx = Math.max(clickX, window.innerWidth - clickX);
+					const dy = Math.max(clickY, window.innerHeight - clickY);
+					const radius = Math.hypot(dx, dy);
+					return (radius * 2) / base * 1.15;
+				};
+
+				const expand = () => {
+					navigating = true;
+					blob.classList.add('is-active');
+					gsap.killTweensOf(blob);
+					gsap.set(blob, { scale: 0, borderRadius: '50%' });
+					gsap.to(blob, {
+						scale: coversViewport(),
+						duration: 0.62,
+						ease: 'back.out(1.1)',
+						overwrite: 'auto',
+					});
+					gsap.to(blob, {
+						borderRadius: '42% 58% 55% 45% / 44% 44% 56% 56%',
+						duration: 0.22,
+						ease: 'sine.inOut',
+						yoyo: true,
+						repeat: 1,
+					});
+				};
+
+				const shrink = () => {
+					if (!navigating) return;
+					navigating = false;
+					pendingHref = null;
+					if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+					gsap.killTweensOf(blob);
+					gsap.to(blob, {
+						scale: 0,
+						duration: 0.58,
+						ease: 'back.in(1.05)',
+						overwrite: 'auto',
+						onComplete: () => {
+							blob.classList.remove('is-active');
+							blob.style.borderRadius = '50%';
+						},
+					});
+				};
+
+				document.addEventListener('click', (e) => {
+					const a = (e.target as Element).closest('a[href]') as HTMLAnchorElement | null;
+					if (!a) return;
+					const href = a.getAttribute('href') || '';
+					if (
+						a.target === '_blank' ||
+						a.hasAttribute('download') ||
+						e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
+						href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('#') ||
+						(a.origin !== location.origin && !href.startsWith('/'))
+					) return;
+					if (href.includes('#') && href.split('#')[0] === location.pathname) return;
+					pendingHref = a.href;
+					clickX = (e as MouseEvent).clientX ?? window.innerWidth / 2;
+					clickY = (e as MouseEvent).clientY ?? window.innerHeight / 2;
+					setOrigin(clickX, clickY);
+					setTimeout(() => {
+						if (!navigating && pendingHref === a.href) {
+							expand();
+							fallbackTimer = window.setTimeout(() => {
+								location.href = a.href;
+							}, 520);
+						}
+					}, 60);
+				}, true);
+
+				document.addEventListener('astro:before-preparation', () => {
+					setOrigin(clickX, clickY);
+					expand();
+					if (fallbackTimer) clearTimeout(fallbackTimer);
+					fallbackTimer = window.setTimeout(() => { if (navigating) shrink(); }, 2800);
+				});
+
+				document.addEventListener('astro:page-load', () => {
+					requestAnimationFrame(() => {
+						setTimeout(shrink, 140);
+					});
+					animateHeroTitles();
+				});
+				document.addEventListener('astro:after-swap', animateHeroTitles as EventListener);
+				window.addEventListener('pageshow', () => {
+					if (navigating) shrink();
+				});
+			};
+
 			const initGlobalEffects = () => {
 				const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 				const revealItems = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -205,7 +479,6 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 				if (reduceMotion.matches || !('IntersectionObserver' in window)) {
 					revealItems.forEach((item) => item.classList.add('is-visible'));
 				} else {
-					// Apple-style bidirectional scroll animation (appear when scrolling down, revert when exiting)
 					const observer = new IntersectionObserver(
 						(entries) => {
 							entries.forEach((entry) => {
@@ -224,32 +497,21 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 					revealItems.forEach((item) => observer.observe(item));
 				}
 
-				// Apple-style smart sticky header
 				const header = document.getElementById('site-header');
 				if (header) {
 					let lastScrollY = window.scrollY;
 					let ticking = false;
-
 					window.addEventListener('scroll', () => {
 						if (!ticking) {
 							window.requestAnimationFrame(() => {
 								const currentScrollY = window.scrollY;
-								
-								if (currentScrollY > 15) {
-									header.classList.add('is-scrolled');
-								} else {
-									header.classList.remove('is-scrolled');
-								}
-
+								if (currentScrollY > 15) header.classList.add('is-scrolled');
+								else header.classList.remove('is-scrolled');
 								const isMenuOpen = header.classList.contains('nav-open');
 								if (!isMenuOpen) {
-									if (currentScrollY > 100 && currentScrollY > lastScrollY + 4) {
-										header.classList.add('nav-hidden');
-									} else if (currentScrollY < lastScrollY - 4 || currentScrollY <= 80) {
-										header.classList.remove('nav-hidden');
-									}
+									if (currentScrollY > 100 && currentScrollY > lastScrollY + 4) header.classList.add('nav-hidden');
+									else if (currentScrollY < lastScrollY - 4 || currentScrollY <= 80) header.classList.remove('nav-hidden');
 								}
-
 								lastScrollY = Math.max(0, currentScrollY);
 								ticking = false;
 							});
@@ -258,7 +520,6 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 					}, { passive: true });
 				}
 
-				// Parallax subtle shifts for desktop pointer
 				const canParallax = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 800px)');
 				if (canParallax.matches && !reduceMotion.matches) {
 					const layers = document.querySelectorAll<HTMLElement>('[data-parallax]');
@@ -287,9 +548,9 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 			};
 
 			initGlobalEffects();
-			// Re-run on Astro View Transitions navigation
+			initBlobCursor();
+			initRouteBlob();
 			document.addEventListener('astro:page-load', initGlobalEffects);
-			document.addEventListener('astro:after-swap', animateHeroTitles as EventListener);
 		</script>
 	</body>
 </html>
