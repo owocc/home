@@ -46,7 +46,7 @@ import { designGallery } from '../../data/gallery';
 			<div class="gallery-grid" id="gallery-grid">
 				{
 					designGallery.map((item) => (
-						<article class="gallery-card" data-category={item.category} data-reveal>
+						<a class="gallery-card gallery-card--link" href={`/design/${item.id}/`} data-category={item.category} data-reveal aria-label={`${item.title.cn} — 查看详情`}>
 							<div class="gallery-card__thumb">
 								<img src={item.image} alt={item.title.cn} loading="lazy" />
 								<div class="gallery-card__badge-wrap">
@@ -80,8 +80,11 @@ import { designGallery } from '../../data/gallery';
 										<span class="gallery-card__tag">{tag}</span>
 									))}
 								</div>
+								<span class="gallery-card__cta" aria-hidden="true">
+									<span data-i18n-key="design.viewDetail">查看详情</span> <ArrowUpRight class="icon" size={14} stroke-width={2.5} />
+								</span>
 							</div>
-						</article>
+						</a>
 					))
 				}
 			</div>

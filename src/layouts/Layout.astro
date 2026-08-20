@@ -115,6 +115,89 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 		<Footer />
 
 		<script>
+			import { gsap } from 'gsap';
+
+			const animateHeroTitles = () => {
+				const titleEls = document.querySelectorAll<HTMLElement>('.page-hero h1.display, .home-hero h1.display');
+				if (!titleEls.length) return;
+				const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+				titleEls.forEach((h1) => {
+					if (reduceMotion) {
+						h1.style.visibility = 'visible';
+						// ensure any previous entrance wrappers are revealed
+						h1.querySelectorAll<HTMLElement>('.entrance-line').forEach((l) => {
+							l.style.opacity = '1';
+							l.style.transform = 'none';
+						});
+						return;
+					}
+
+					// Avoid re-wrapping on view-transition re-run
+					let lines: HTMLElement[] = Array.from(h1.querySelectorAll<HTMLElement>('.entrance-line'));
+					if (lines.length === 0) {
+						const html = h1.innerHTML;
+						// Split by <br> if present (most page-hero titles: "MADE WITH<br><span...")
+						if (/<br/i.test(html)) {
+							const parts = html.split(/<br\s*\/?>/i);
+							h1.innerHTML = '';
+							parts.forEach((part) => {
+								const trimmed = part.trim();
+								if (!trimmed) return;
+								const line = document.createElement('span');
+								line.className = 'entrance-line';
+								line.style.display = 'block';
+								line.style.overflow = 'visible';
+								line.style.transformOrigin = 'left center';
+								line.style.willChange = 'transform, opacity';
+								line.innerHTML = trimmed;
+								h1.appendChild(line);
+							});
+						} else {
+							// No <br>: wrap whole content as single line
+							const line = document.createElement('span');
+							line.className = 'entrance-line';
+							line.style.display = 'block';
+							line.style.overflow = 'visible';
+							line.style.transformOrigin = 'left center';
+							line.style.willChange = 'transform, opacity';
+							line.innerHTML = html;
+							h1.innerHTML = '';
+							h1.appendChild(line);
+						}
+						lines = Array.from(h1.querySelectorAll<HTMLElement>('.entrance-line'));
+					}
+
+					if (lines.length === 0) return;
+
+					lines.forEach((line) => {
+						line.style.display = 'block';
+						line.style.transformOrigin = 'left center';
+						line.style.willChange = 'transform, opacity';
+						line.style.overflow = 'visible';
+					});
+
+					h1.style.overflow = 'hidden';
+					h1.style.visibility = 'visible';
+					h1.style.perspective = '900px';
+					h1.classList.add('is-entrance-ready');
+
+					gsap.killTweensOf(lines);
+					gsap.set(lines, { rotation: 10, xPercent: 6, yPercent: 10, autoAlpha: 0, transformOrigin: 'left center', force3D: true });
+					gsap.to(lines, { rotation: 0, xPercent: 0, yPercent: 0, autoAlpha: 1, duration: 0.78, ease: 'power3.out', stagger: 0.15, overwrite: 'auto' });
+				});
+
+				// Stagger the lede after hero title
+				const ledes = document.querySelectorAll<HTMLElement>('.page-hero__lede, .home-hero__intro, .home-hero__role');
+				if (ledes.length && !reduceMotion) {
+					gsap.killTweensOf(ledes);
+					gsap.set(ledes, { autoAlpha: 0, y: 12 });
+					gsap.to(ledes, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out', stagger: 0.06, delay: 0.38, overwrite: 'auto' });
+				} else if (reduceMotion) {
+					ledes.forEach((el) => (el.style.opacity = '1'));
+				}
+			};
+
 			const initGlobalEffects = () => {
 				const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 				const revealItems = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -199,11 +282,14 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 						document.body.style.setProperty('--grid-shift-y', '0px');
 					}, { passive: true });
 				}
+
+				animateHeroTitles();
 			};
 
 			initGlobalEffects();
 			// Re-run on Astro View Transitions navigation
 			document.addEventListener('astro:page-load', initGlobalEffects);
+			document.addEventListener('astro:after-swap', animateHeroTitles as EventListener);
 		</script>
 	</body>
 </html>

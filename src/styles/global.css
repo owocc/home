@@ -1523,6 +1523,27 @@
 		font-size: 0.68rem;
 		font-weight: 750;
 	}
+	.gallery-card--link {
+		color: inherit;
+		text-decoration: none;
+	}
+	.gallery-card--link:focus-visible {
+		outline: 3px solid var(--ink);
+		outline-offset: 3px;
+	}
+	.gallery-card__cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: 1rem;
+		font-family: var(--mono-font);
+		font-size: 0.72rem;
+		font-weight: 850;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink);
+		opacity: 0.9;
+	}
 	.project-card:nth-child(3n + 2) {
 		transform: rotate(1deg);
 	}

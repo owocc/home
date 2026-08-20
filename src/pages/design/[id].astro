@@ -1,0 +1,277 @@
+---
+import ArrowLeft from '@lucide/astro/icons/arrow-left';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import Sparkles from '@lucide/astro/icons/sparkles';
+import Layout from '../../layouts/Layout.astro';
+import { designGallery, type GalleryItem } from '../../data/gallery';
+
+interface Props {
+	item: GalleryItem;
+	previous?: GalleryItem;
+	next?: GalleryItem;
+}
+
+export function getStaticPaths() {
+	return designGallery.map((item, index) => ({
+		params: { id: item.id },
+		props: {
+			item,
+			previous: designGallery[index - 1],
+			next: designGallery[index + 1],
+		},
+	}));
+}
+
+const { item, previous, next } = Astro.props as Props;
+---
+
+<Layout title={item.title.cn} description={item.description.cn} ogImage={item.image}>
+	<header class="detail-header design-detail-header">
+		<div class="shell">
+			<a class="detail-header__back" href="/design/"><ArrowLeft class="icon" size={16} stroke-width={2.5} />返回画廊</a>
+			<div class="detail-header__grid" data-reveal>
+				<div>
+					<p class="eyebrow">{item.category === 'design' ? 'DESIGN / 设计作品' : 'PHOTO / 摄影作品'} · {item.year}</p>
+					<h1 class="display design-detail-title" data-design-title>
+						<span class="design-detail-title__line title-cn">{item.title.cn}</span>
+						<span class="design-detail-title__line title-en" style="display: none;">{item.title.en}</span>
+					</h1>
+					<p class="detail-header__summary">
+						<span class="desc-cn">{item.description.cn}</span>
+						<span class="desc-en" style="display: none;">{item.description.en}</span>
+					</p>
+				</div>
+				<aside class="detail-meta design-detail-meta" aria-label="作品资料">
+					<dl>
+						<div><dt>年份</dt><dd>{item.year}</dd></div>
+						<div><dt>类别</dt><dd>{item.category === 'design' ? '设计' : '摄影'}</dd></div>
+						<div><dt>来源</dt><dd>{item.isAiGenerated ? 'AI 生成' : '原创手作'}</dd></div>
+						<div><dt>标签</dt><dd>{item.tags.join(' / ')}</dd></div>
+					</dl>
+				</aside>
+			</div>
+		</div>
+	</header>
+
+	<div class="shell section" data-reveal>
+		<figure class="design-detail-figure">
+			<img src={item.image} alt={item.title.cn} loading="eager" />
+			<figcaption class="design-detail-figure__cap">
+				{item.isAiGenerated ? (
+					<span class="ai-badge"><Sparkles class="icon" size={12} stroke-width={2.4} /> AI 生成</span>
+				) : (
+					<span class="human-badge">🎨 原创手作</span>
+				)}
+				<span class="eyebrow" style="margin: 0;">{item.title.cn}</span>
+			</figcaption>
+		</figure>
+
+		<div class="article-shell" style="margin-top: 2.5rem;">
+			<article class="prose">
+				<h2>关于这件作品</h2>
+				<p class="desc-cn">{item.description.cn}</p>
+				<p class="desc-en" style="display: none;">{item.description.en}</p>
+				<p>更多过程、草图与参数记录可在此页后续补充；当前以画廊数据为单一事实源（<code>src/data/gallery.ts</code>），新增作品只需在该文件追加条目即可自动生成详情页。</p>
+			</article>
+			<aside class="article-aside" aria-label="作品补充信息">
+				<div class="article-aside__note">
+					<span class="script">design notes</span>
+					<p>记录选择与过程中的权衡，而不只是最终画面。</p>
+				</div>
+				<ul class="tag-list detail-tag-list" aria-label="作品标签">
+					{item.tags.map((tag) => <li>{tag}</li>)}
+				</ul>
+			</aside>
+		</div>
+	</div>
+
+	<nav class="case-nav shell" aria-label="作品翻页">
+		{previous ? (
+			<a class="case-nav__item case-nav__item--previous" href={`/design/${previous.id}/`}>
+				<span class="eyebrow"><ArrowLeft class="icon" size={15} stroke-width={2.5} />上一个作品</span>
+				<strong><span class="title-cn">{previous.title.cn}</span><span class="title-en" style="display: none;">{previous.title.en}</span></strong>
+			</a>
+		) : <span class="case-nav__empty" aria-hidden="true"></span>}
+		{next ? (
+			<a class="case-nav__item case-nav__item--next" href={`/design/${next.id}/`}>
+				<span class="eyebrow">下一个作品 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
+				<strong><span class="title-cn">{next.title.cn}</span><span class="title-en" style="display: none;">{next.title.en}</span></strong>
+			</a>
+		) : (
+			<a class="case-nav__item case-nav__item--next" href="/design/">
+				<span class="eyebrow">回到画廊 <ArrowRight class="icon" size={15} stroke-width={2.5} /></span>
+				<strong>全部作品</strong>
+			</a>
+		)}
+	</nav>
+</Layout>
+
+<script>
+	import { gsap } from 'gsap';
+
+	const playDesignTitle = () => {
+		const titleEl = document.querySelector<HTMLElement>('[data-design-title]');
+		if (!titleEl) return;
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const lines = Array.from(titleEl.querySelectorAll<HTMLElement>('.design-detail-title__line'));
+		if (lines.length === 0) return;
+
+		if (reduceMotion) {
+			titleEl.style.visibility = 'visible';
+			lines.forEach((line) => {
+				line.style.opacity = '1';
+				line.style.transform = 'none';
+			});
+			return;
+		}
+
+		// 可见语言版本；若中英文都在流内则都动（默认中文可见，英文 display:none 被过滤）
+		let targets: HTMLElement[] = lines.filter((el) => getComputedStyle(el).display !== 'none');
+		if (targets.length === 0) targets = lines;
+
+		// 长标题：按视觉换行自动分组，实现“视觉上一行行出现 + 每行向右旋转回正”
+		// 手法：先将可见标题临时设为可见以测量，再按 char 的 top 分组
+		const needsVisualRows = targets.length === 1 && (targets[0].textContent || '').trim().length > 10;
+
+		if (needsVisualRows) {
+			const line = targets[0];
+			if (!line.querySelector('[data-char]')) {
+				const raw = (line.textContent || '').trim();
+				line.textContent = '';
+				line.style.display = 'block';
+				line.style.wordBreak = 'break-word';
+				line.style.overflowWrap = 'anywhere';
+				for (const ch of raw) {
+					const s = document.createElement('span');
+					s.setAttribute('data-char', 'true');
+					s.textContent = ch;
+					s.style.display = 'inline-block';
+					s.style.transformOrigin = 'left center';
+					s.style.willChange = 'transform, opacity';
+					line.appendChild(s);
+				}
+			}
+			const chars = Array.from(line.querySelectorAll<HTMLElement>('[data-char]'));
+			if (chars.length) {
+				titleEl.style.visibility = 'visible';
+				titleEl.style.overflow = 'hidden';
+				titleEl.style.perspective = '900px';
+				// 强制布局
+				void line.offsetHeight;
+				const rows: HTMLElement[][] = [];
+				let cur: HTMLElement[] = [];
+				let curTop: number | null = null;
+				for (const ch of chars) {
+					const top = ch.getBoundingClientRect().top;
+					if (curTop === null || Math.abs(top - curTop) < 5) {
+						curTop = curTop ?? top;
+						cur.push(ch);
+					} else {
+						rows.push(cur);
+						cur = [ch];
+						curTop = top;
+					}
+				}
+				if (cur.length) rows.push(cur);
+				if (rows.length > 1) {
+					rows.forEach((r) => {
+						gsap.killTweensOf(r);
+						gsap.set(r, { rotation: 10, xPercent: 4, autoAlpha: 0, transformOrigin: 'left center', force3D: true });
+					});
+					rows.forEach((r, i) => {
+						gsap.to(r, { rotation: 0, xPercent: 0, autoAlpha: 1, duration: 0.62, ease: 'power3.out', stagger: 0.016, delay: i * 0.16, overwrite: 'auto' });
+					});
+					const extras = document.querySelectorAll<HTMLElement>('.design-detail-header .detail-header__summary, .design-detail-header .design-detail-meta');
+					if (extras.length) {
+						gsap.killTweensOf(extras);
+						gsap.set(extras, { autoAlpha: 0, y: 12 });
+						gsap.to(extras, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out', stagger: 0.06, delay: 0.45, overwrite: 'auto' });
+					}
+					return;
+				}
+				// 仅一行则回落到整行
+				targets = [line];
+				// 清理拆字，避免后续语言切换重复嵌套
+				// 保留 chars 但后续不再按 char 动，整行旋转更稳
+				chars.forEach((c) => {
+					c.style.display = 'inline';
+					c.style.transform = 'none';
+					c.style.opacity = '1';
+				});
+			}
+		}
+
+		// 通用：逐行向右旋转回正 + 一行行出现
+		targets.forEach((el) => {
+			el.style.display = 'block';
+			el.style.transformOrigin = 'left center';
+			el.style.willChange = 'transform, opacity';
+		});
+		titleEl.style.overflow = 'hidden';
+		titleEl.style.visibility = 'visible';
+		titleEl.style.perspective = '900px';
+		gsap.killTweensOf(targets);
+		gsap.set(targets, { rotation: 10, xPercent: 6, yPercent: 10, autoAlpha: 0, transformOrigin: 'left center', force3D: true });
+		gsap.to(targets, { rotation: 0, xPercent: 0, yPercent: 0, autoAlpha: 1, duration: 0.78, ease: 'power3.out', stagger: 0.15, overwrite: 'auto' });
+		const extras = document.querySelectorAll<HTMLElement>('.design-detail-header .detail-header__summary, .design-detail-header .design-detail-meta');
+		if (extras.length) {
+			gsap.killTweensOf(extras);
+			gsap.set(extras, { autoAlpha: 0, y: 12 });
+			gsap.to(extras, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out', stagger: 0.06, delay: 0.38, overwrite: 'auto' });
+		}
+	};
+
+	const initLangToggle = () => {
+		const updateLang = () => {
+			const lang = document.documentElement.getAttribute('data-lang') || 'cn';
+			const showEn = lang === 'en';
+			document.querySelectorAll<HTMLElement>('.design-detail-header .title-cn').forEach((el) => (el.style.display = showEn ? 'none' : 'block'));
+			document.querySelectorAll<HTMLElement>('.design-detail-header .title-en').forEach((el) => (el.style.display = showEn ? 'block' : 'none'));
+			document.querySelectorAll<HTMLElement>('.design-detail-header .desc-cn').forEach((el) => (el.style.display = showEn ? 'none' : 'block'));
+			document.querySelectorAll<HTMLElement>('.design-detail-header .desc-en').forEach((el) => (el.style.display = showEn ? 'block' : 'none'));
+			playDesignTitle();
+		};
+		updateLang();
+		window.removeEventListener('languagechange', updateLang as EventListener);
+		window.addEventListener('languagechange', updateLang as EventListener);
+	};
+
+	playDesignTitle();
+	initLangToggle();
+	document.addEventListener('astro:page-load', () => {
+		playDesignTitle();
+		initLangToggle();
+	});
+	document.addEventListener('astro:after-swap', playDesignTitle as EventListener);
+</script>
+
+<style>
+	/* Visibility handled by GSAP; prevent FOUC flash of un-animated title */
+	.design-detail-title {
+		visibility: hidden;
+	}
+	.design-detail-title__line {
+		visibility: visible;
+	}
+	.design-detail-figure {
+		border: var(--border);
+		background: var(--paper-light);
+		box-shadow: var(--shadow);
+		overflow: hidden;
+	}
+	.design-detail-figure img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	.design-detail-figure__cap {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.85rem 1rem;
+		border-top: var(--border);
+	}
+	.design-detail-header {
+		background: color-mix(in srgb, var(--yellow) 18%, var(--paper));
+	}
+</style>
