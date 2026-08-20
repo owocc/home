@@ -245,7 +245,12 @@ const navItems = siteConfig.navigation as readonly NavigationItem[];
         }, { passive: true });
     };
 
-    initThemeToggle();
-    initLangToggle();
-    initMobileNav();
+    const initHeader = () => {
+        initThemeToggle();
+        initLangToggle();
+        initMobileNav();
+    };
+
+    initHeader();
+    document.addEventListener('astro:page-load', initHeader);
 </script>

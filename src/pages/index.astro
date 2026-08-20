@@ -6,6 +6,7 @@ import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
 import CodeXml from '@lucide/astro/icons/code-xml';
 import Pencil from '@lucide/astro/icons/pencil';
 import Sparkles from '@lucide/astro/icons/sparkles';
+import MessageCircle from '@lucide/astro/icons/message-circle';
 import BlogCard from '../components/BlogCard.astro';
 import HeroCharacter from '../components/HeroCharacter.astro';
 import ProjectCard from '../components/ProjectCard.astro';
@@ -26,7 +27,13 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 <Layout title={siteConfig.title}>
 	<section class="home-hero" aria-labelledby="hero-title">
 		<div class="home-hero__canvas shell">
-			<p class="home-hero__welcome eyebrow" data-reveal>{siteConfig.identity.eyebrow}</p>
+			<!-- Rotating Speech Bubble (changes message every 5s) -->
+			<div class="home-hero__welcome eyebrow" id="hero-speech-bubble" data-reveal>
+				<div class="home-hero__bubble-inner" id="hero-bubble-text">
+					<MessageCircle class="icon" size={15} stroke-width={2.4} />
+					<span id="hero-bubble-content">{siteConfig.heroQuotes.cn[0]}</span>
+				</div>
+			</div>
 
 			<div class="home-hero__scene">
 				<div class="home-hero__stage">
@@ -49,11 +56,11 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 
 			<div class="home-hero__bottom" data-reveal>
 				<p class="home-hero__role">
-					<span class="eyebrow">CURRENTLY</span>
-					<strong>{siteConfig.identity.role}</strong>
+					<span class="eyebrow" data-i18n-key="hero.currently">CURRENTLY</span>
+					<strong data-i18n-key="hero.role">{siteConfig.identity.role}</strong>
 				</p>
-				<p class="home-hero__intro">{siteConfig.identity.intro}</p>
-				<a class="button" href="#projects"><span data-i18n-key="home.scrollDown">向下看看</span> <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
+				<p class="home-hero__intro" data-i18n-key="hero.intro">{siteConfig.identity.intro}</p>
+				<a class="button" href="#projects"><span data-i18n-key="hero.scrollDown">向下看看</span> <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -67,16 +74,17 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 					<span class="home-about__doodle script" aria-hidden="true">that feels right <ArrowRight class="icon" size={25} stroke-width={2.2} /></span>
 				</div>
 				<div class="home-about__copy paper-panel" data-reveal>
-					<p class="eyebrow"><span data-i18n-key="home.aboutTitle">你好，我是</span> {siteConfig.identity.name}</p>
-					{siteConfig.identity.bio.map((paragraph) => <p>{paragraph}</p>)}
+					<p class="eyebrow"><span data-i18n-key="about.introHeading">你好，我是 owocc</span></p>
+					<p data-i18n-key="about.bio1">{siteConfig.identity.bio[0]}</p>
+					<p data-i18n-key="about.bio2">{siteConfig.identity.bio[1]}</p>
 					<dl class="home-about__facts">
 						<div>
 							<dt data-i18n-key="common.location">所在地</dt>
-							<dd>{siteConfig.identity.location}</dd>
+							<dd data-i18n-key="about.locationVal">{siteConfig.identity.location}</dd>
 						</div>
 						<div>
 							<dt data-i18n-key="common.status">当前状态</dt>
-							<dd>{siteConfig.identity.availability}</dd>
+							<dd data-i18n-key="about.statusVal">{siteConfig.identity.availability}</dd>
 						</div>
 					</dl>
 					{siteConfig.identity.isPlaceholder && (
@@ -94,7 +102,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{projects.map((project, index) => <ProjectCard project={project} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button button--ink" href="/projects/"><span data-i18n-key="home.viewAllProjects">查看全部项目</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+				<a class="button button--ink" href="/projects/"><span data-i18n-key="projects.viewAll">查看全部项目</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -126,7 +134,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 							</ul>
 						</div>
 					))}
-					<a class="button" href="/resume/">打开完整简历 <ArrowRight class="icon" size={16} stroke-width={2.5} /></a>
+					<a class="button" href="/resume/"><span data-i18n-key="experience.openFull">打开完整简历</span> <ArrowRight class="icon" size={16} stroke-width={2.5} /></a>
 				</aside>
 			</div>
 		</div>
@@ -139,7 +147,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				{posts.map((post, index) => <BlogCard post={post} index={index} />)}
 			</div>
 			<div class="home-section-link" data-reveal>
-				<a class="button" href="/blog/"><span data-i18n-key="home.viewAllBlog">翻阅全部文章</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+				<a class="button" href="/blog/"><span data-i18n-key="blog.viewAll">翻阅全部文章</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
 			</div>
 		</div>
 	</section>
@@ -147,13 +155,13 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 	<section class="home-contact" id="contact" aria-labelledby="contact-title">
 		<div class="home-contact__inner shell">
 			<div data-reveal>
-				<p class="eyebrow">CONTACT / 找我聊聊</p>
+				<p class="eyebrow" data-i18n-key="contact.kicker">CONTACT / 找我聊聊</p>
 				<h2 id="contact-title" class="display">LET'S MAKE<br /><span>SOMETHING</span><br />GOOD.</h2>
 			</div>
 			<div class="home-contact__card" data-reveal>
 				<p class="script">say hello!</p>
-				<h3>{siteConfig.contact.heading}</h3>
-				<p>{siteConfig.contact.message}</p>
+				<h3 data-i18n-key="contact.heading">{siteConfig.contact.heading}</h3>
+				<p data-i18n-key="contact.message">{siteConfig.contact.message}</p>
 				<a class="home-contact__email" href={`mailto:${siteConfig.contact.email}`}>
 					{siteConfig.contact.email} <ArrowUpRight class="icon" size={18} stroke-width={2.4} />
 				</a>
@@ -166,3 +174,58 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 		</div>
 	</section>
 </Layout>
+
+<script is:inline>
+	(function() {
+		const cnQuotes = [
+			'HELLO, I MAKE THINGS WITH IDEAS & CODE ✨',
+			'欢迎来到 owocc 的手作数字小站 🎨',
+			'让设计与代码自然发生，充满生命力 🚀',
+			'这里记录实验、草图与好奇心 💡',
+			'保持好奇，持续创造美好的事物 🌟',
+		];
+		const enQuotes = [
+			'HELLO, I MAKE THINGS WITH IDEAS & CODE ✨',
+			'Welcome to owocc\'s handmade digital nook 🎨',
+			'Blending design & code with alive motion 🚀',
+			'A creative archive of ideas & curiosity 💡',
+			'Keep curious and craft good things 🌟',
+		];
+
+		function setupBubble() {
+			const bubbleInner = document.getElementById('hero-bubble-text');
+			const bubbleContent = document.getElementById('hero-bubble-content');
+			if (!bubbleInner || !bubbleContent) return;
+
+			let index = 0;
+			function getQuotes() {
+				const lang = document.documentElement.getAttribute('data-lang') || 'cn';
+				return lang === 'en' ? enQuotes : cnQuotes;
+			}
+
+			function rotate() {
+				const quotes = getQuotes();
+				index = (index + 1) % quotes.length;
+				bubbleInner.classList.add('is-changing');
+				setTimeout(function() {
+					bubbleContent.textContent = quotes[index];
+					bubbleInner.classList.remove('is-changing');
+				}, 300);
+			}
+
+			setInterval(rotate, 5000);
+			window.addEventListener('languagechange', function() {
+				const quotes = getQuotes();
+				index = index % quotes.length;
+				bubbleContent.textContent = quotes[index];
+			});
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', setupBubble);
+		} else {
+			setupBubble();
+		}
+		document.addEventListener('astro:page-load', setupBubble);
+	})();
+</script>

@@ -398,36 +398,49 @@ const canvasSize = 1254;
 		let previousMovementEnergy = 0;
 		let settlePulse = 0;
 
+		let lastPointerMoveTime = performance.now();
+		const IDLE_TIMEOUT_MS = 2400; // After 2.4s of mouse stillness, start looking around
+
 		const startIdleSaccade = (now: number) => {
-			if (finePointer.matches || reduceMotion.matches) return;
-			idleTargetX = randomBetween(-0.32, 0.32);
-			idleTargetY = randomBetween(-0.22, 0.2);
-			idleUntil = now + randomBetween(700, 1300);
-			nextIdleAt = idleUntil + randomBetween(1800, 3200);
+			if (reduceMotion.matches) return;
+			// Random look direction across wide coordinates (left, right, up, stickers, sky)
+			idleTargetX = randomBetween(-0.75, 0.75);
+			idleTargetY = randomBetween(-0.55, 0.5);
+			idleUntil = now + randomBetween(1200, 2400);
+			nextIdleAt = idleUntil + randomBetween(1400, 3000);
 		};
 
 		const updateIdleGaze = (now: number) => {
-			if (finePointer.matches || reduceMotion.matches) {
+			if (reduceMotion.matches) {
 				idleTargetX = 0;
 				idleTargetY = 0;
 				return;
 			}
-			if (now >= idleUntil) {
-				idleTargetX = 0;
-				idleTargetY = 0;
+			const isPointerStationary = now - lastPointerMoveTime > IDLE_TIMEOUT_MS;
+			if (!pointerInsideHero || isPointerStationary || !finePointer.matches) {
+				if (now >= idleUntil && Math.random() < 0.2) {
+					// Return to slight center occasionally
+					idleTargetX = randomBetween(-0.15, 0.15);
+					idleTargetY = randomBetween(-0.1, 0.1);
+				}
+				if (now >= nextIdleAt) {
+					startIdleSaccade(now);
+				}
 			}
-			if (now >= nextIdleAt) startIdleSaccade(now);
 		};
 
 		const getPointerTarget = () => {
-			if (!finePointer.matches || !pointerInsideHero || reduceMotion.matches) return { x: idleTargetX, y: idleTargetY };
+			const now = performance.now();
+			const isPointerStationary = now - lastPointerMoveTime > IDLE_TIMEOUT_MS;
+			if (!finePointer.matches || !pointerInsideHero || reduceMotion.matches || isPointerStationary) {
+				return { x: idleTargetX, y: idleTargetY };
+			}
 			const bounds = character.getBoundingClientRect();
 			return {
 				x: clamp((pointerX - (bounds.left + bounds.width / 2)) / (bounds.width / 2), -1, 1),
 				y: clamp((pointerY - (bounds.top + bounds.height * 0.44)) / (bounds.height * 0.56), -1, 1),
 			};
 		};
-
 		const updateEyeMotion = (deltaTime: number) => {
 			const pointerTarget = getPointerTarget();
 			const stiffness = 169;
@@ -733,6 +746,7 @@ const canvasSize = 1254;
 			pointerX = event.clientX;
 			pointerY = event.clientY;
 			pointerInsideHero = true;
+			lastPointerMoveTime = performance.now();
 			startAnimation();
 		};
 

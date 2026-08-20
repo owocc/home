@@ -1,0 +1,138 @@
+---
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right';
+import Sparkles from '@lucide/astro/icons/sparkles';
+import Palette from '@lucide/astro/icons/palette';
+import Camera from '@lucide/astro/icons/camera';
+import Layout from '../../layouts/Layout.astro';
+import { designGallery } from '../../data/gallery';
+---
+
+<Layout title="设计与摄影" description="owocc 的设计与摄影作品画廊，包含海报、概念设计、城市摄影与 AI 生成图谱试验。">
+	<header class="page-hero page-hero--design">
+		<div class="page-hero__inner shell">
+			<span class="page-hero__stamp page-hero__stamp--yellow" aria-hidden="true">GALLERY / 05</span>
+			<p class="eyebrow" data-i18n-key="design.kicker">DESIGN & PHOTO / 设计主页</p>
+			<h1 class="display">SHAPE,<br /><span class="poster-label">VISION,</span> LIGHT.</h1>
+			<p class="page-hero__lede" data-i18n-key="design.intro">这里收录海报设计、界面构思、胶片摄影以及结合生成式 AI 的创意图谱试验。</p>
+		</div>
+	</header>
+
+	<section class="section listing-section" aria-labelledby="gallery-title">
+		<div class="shell">
+			<div class="listing-section__intro" data-reveal>
+				<div>
+					<p class="eyebrow" data-i18n-key="design.kicker">DESIGN & PHOTO / 设计主页</p>
+					<h2 id="gallery-title" data-i18n-key="design.title">视觉、摄影与 AI 试验</h2>
+				</div>
+				<p>共 {designGallery.length} <span data-i18n-key="design.count">件精选作品收录于画廊</span>。</p>
+			</div>
+
+			<!-- Category Filter Tabs -->
+			<div class="gallery-tabs" data-reveal>
+				<button type="button" class="gallery-tab-btn is-active" data-filter="all">
+					<span data-i18n-key="design.tab.all">全部作品</span> ({designGallery.length})
+				</button>
+				<button type="button" class="gallery-tab-btn" data-filter="design">
+					<Palette class="icon" size={16} stroke-width={2.2} />
+					<span data-i18n-key="design.tab.design">🎨 设计图</span> ({designGallery.filter(item => item.category === 'design').length})
+				</button>
+				<button type="button" class="gallery-tab-btn" data-filter="photography">
+					<Camera class="icon" size={16} stroke-width={2.2} />
+					<span data-i18n-key="design.tab.photography">📷 摄影记录</span> ({designGallery.filter(item => item.category === 'photography').length})
+				</button>
+			</div>
+
+			<!-- Gallery Grid -->
+			<div class="gallery-grid" id="gallery-grid">
+				{
+					designGallery.map((item) => (
+						<article class="gallery-card" data-category={item.category} data-reveal>
+							<div class="gallery-card__thumb">
+								<img src={item.image} alt={item.title.cn} loading="lazy" />
+								<div class="gallery-card__badge-wrap">
+									{item.isAiGenerated ? (
+										<span class="ai-badge" title="使用 AI 工具辅助生成与重构">
+											<Sparkles class="icon" size={12} stroke-width={2.4} />
+											<span data-i18n-key="design.aiBadge">✨ AI 生成</span>
+										</span>
+									) : (
+										<span class="human-badge" title="原创手作/相机实拍">
+											<span data-i18n-key="design.humanBadge">🎨 原创手作</span>
+										</span>
+									)}
+								</div>
+							</div>
+							<div class="gallery-card__content">
+								<div class="gallery-card__meta">
+									<span>{item.category === 'design' ? 'DESIGN / 设计' : 'PHOTO / 摄影'}</span>
+									<span>{item.year}</span>
+								</div>
+								<h3 class="gallery-card__title">
+									<span class="title-cn">{item.title.cn}</span>
+									<span class="title-en" style="display: none;">{item.title.en}</span>
+								</h3>
+								<p class="gallery-card__desc">
+									<span class="desc-cn">{item.description.cn}</span>
+									<span class="desc-en" style="display: none;">{item.description.en}</span>
+								</p>
+								<div class="gallery-card__tags">
+									{item.tags.map((tag) => (
+										<span class="gallery-card__tag">{tag}</span>
+									))}
+								</div>
+							</div>
+						</article>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<section class="archive-cta">
+		<div class="archive-cta__inner shell" data-reveal>
+			<p class="script" data-i18n-key="projects.cta.quote">more ideas are coming...</p>
+			<h2 data-i18n-key="projects.cta.title">想看看创作过程？</h2>
+			<a class="button button--ink" href="/blog/"><span data-i18n-key="projects.cta.button">去读创作笔记</span> <ArrowUpRight class="icon" size={16} stroke-width={2.5} /></a>
+		</div>
+	</section>
+</Layout>
+
+<script>
+	const initGallery = () => {
+		const tabBtns = document.querySelectorAll<HTMLButtonElement>('.gallery-tab-btn');
+		const cards = document.querySelectorAll<HTMLElement>('.gallery-card');
+
+		tabBtns.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				tabBtns.forEach((b) => b.classList.remove('is-active'));
+				btn.classList.add('is-active');
+
+				const filter = btn.dataset.filter;
+				cards.forEach((card) => {
+					if (filter === 'all' || card.dataset.category === filter) {
+						card.style.display = 'flex';
+					} else {
+						card.style.display = 'none';
+					}
+				});
+			});
+		});
+
+		// Dynamic bilingual title & desc toggle based on data-lang
+		const updateGalleryLang = () => {
+			const currentLang = document.documentElement.getAttribute('data-lang') || 'cn';
+			const showEn = currentLang === 'en';
+
+			document.querySelectorAll<HTMLElement>('.title-cn').forEach(el => el.style.display = showEn ? 'none' : 'inline');
+			document.querySelectorAll<HTMLElement>('.title-en').forEach(el => el.style.display = showEn ? 'inline' : 'none');
+			document.querySelectorAll<HTMLElement>('.desc-cn').forEach(el => el.style.display = showEn ? 'none' : 'inline');
+			document.querySelectorAll<HTMLElement>('.desc-en').forEach(el => el.style.display = showEn ? 'inline' : 'none');
+		};
+
+		updateGalleryLang();
+		window.addEventListener('languagechange', updateGalleryLang);
+	};
+
+	initGallery();
+	document.addEventListener('astro:page-load', initGallery);
+</script>

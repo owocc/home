@@ -48,6 +48,17 @@ export interface ContactDetails {
 	socials: readonly SocialLink[];
 }
 
+export interface DesignGalleryItem {
+	id: string;
+	title: string;
+	category: 'design' | 'photography';
+	image: string;
+	description: string;
+	year: string;
+	isAiGenerated: boolean;
+	tags: readonly string[];
+}
+
 export interface SiteConfig {
 	username: string;
 	github: string;
@@ -60,6 +71,10 @@ export interface SiteConfig {
 	skills: readonly SkillGroup[];
 	education: readonly EducationItem[];
 	contact: ContactDetails;
+	heroQuotes: {
+		cn: readonly string[];
+		en: readonly string[];
+	};
 }
 
 export const siteConfig = {
@@ -84,11 +99,28 @@ export const siteConfig = {
 	navigation: [
 		{ label: '首页', href: '/' },
 		{ label: '简历', href: '/resume/' },
+		{ label: '设计', href: '/design/' },
 		{ label: '项目', href: '/projects/' },
 		{ label: '博客', href: '/blog/' },
 		{ label: 'GitHub', href: 'https://github.com/owocc', external: true },
 		{ label: '联系', href: '/#contact' },
 	],
+	heroQuotes: {
+		cn: [
+			'HELLO, I MAKE THINGS WITH IDEAS & CODE ✨',
+			'欢迎来到 owocc 的手作数字小站 🎨',
+			'让设计与代码自然发生，充满生命力 🚀',
+			'这里记录实验、草图与好奇心 💡',
+			'保持好奇，持续创造美好的事物 🌟',
+		],
+		en: [
+			'HELLO, I MAKE THINGS WITH IDEAS & CODE ✨',
+			'Welcome to owocc\'s handmade digital nook 🎨',
+			'Blending design & code with alive motion 🚀',
+			'A creative archive of ideas & curiosity 💡',
+			'Keep curious and craft good things 🌟',
+		],
+	},
 	experience: [
 		{
 			period: '2024 — 现在',
@@ -145,8 +177,8 @@ export const siteConfig = {
 			},
 			{
 				label: '设计主页',
-				href: 'https://github.com/owocc',
-				note: '作品与开源项目',
+				href: '/design/',
+				note: '设计图与摄影画廊',
 			},
 		],
 	},
