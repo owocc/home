@@ -1,0 +1,273 @@
+---
+import mainImage from '../assets/images/hero-2/main.png';
+import mainMaskImage from '../assets/images/hero-2/main-mask.png';
+import eyeImage from '../assets/images/hero-2/eye.png';
+const canvasWidth = 1402;
+const canvasHeight = 1157;
+---
+
+<button
+	class="home-hero__character hero-2-character"
+	type="button"
+	data-parallax="0.55"
+	data-hero-2-character
+	aria-label="角色正在注视前方，眼睛会跟随指针移动"
+>
+	<span class="home-hero__character-art hero-2-character__art" aria-hidden="true">
+		<canvas
+			class="hero-2-character__canvas"
+			width={canvasWidth}
+			height={canvasHeight}
+			data-hero-2-canvas
+			data-main-src={mainImage.src}
+			data-mask-src={mainMaskImage.src}
+			data-eye-src={eyeImage.src}
+			aria-hidden="true"
+		></canvas>
+		<img
+			class="hero-2-character__fallback"
+			src={mainImage.src}
+			alt=""
+			width={canvasWidth}
+			height={canvasHeight}
+			draggable="false"
+		/>
+	</span>
+</button>
+<style>
+	.hero-2-character {
+		position: absolute;
+		left: 52%;
+		transform: translateX(-50%);
+		width: min(56%, 480px);
+		aspect-ratio: 1402 / 1157;
+		bottom: clamp(-7.5rem, -8vw, -4.5rem);
+		top: auto;
+		z-index: 10;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	@media (max-width: 900px) {
+		.hero-2-character {
+			width: min(68%, 420px);
+			bottom: clamp(-6.5rem, -7vw, -4rem);
+		}
+	}
+
+	@media (max-width: 600px) {
+		.hero-2-character {
+			width: min(84%, 360px);
+			bottom: -4rem;
+		}
+	}
+
+	.hero-2-character__art {
+		position: absolute;
+		inset: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		filter: drop-shadow(5px 4px 0 rgba(17, 17, 17, 0.92)) drop-shadow(-5px -3px 0 var(--yellow));
+		animation: hero-float 4.8s ease-in-out infinite;
+		will-change: transform;
+	}
+
+	.hero-2-character__canvas,
+	.hero-2-character__fallback {
+		position: absolute;
+		inset: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		user-select: none;
+		-webkit-user-drag: none;
+	}
+
+	.hero-2-character__canvas {
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	.hero-2-character__fallback {
+		z-index: 1;
+		transition: opacity 180ms ease;
+	}
+
+	.hero-2-character__canvas[data-canvas-ready] + .hero-2-character__fallback {
+		opacity: 0;
+		visibility: hidden;
+	}
+</style>
+
+<script>
+	const CANVAS_WIDTH = 1402;
+	const CANVAS_HEIGHT = 1157;
+
+	// 左眼与右眼在 1402x1157 画布上的几何中心与尺寸
+	// 左眼: 533.7, 860.6, 框宽约 226, 框高约 170
+	// 右眼: 942.4, 815.5, 框宽约 222, 框高约 182
+	const EYES_CONFIG = [
+		{
+			// 左眼 (尺寸 181，最大位移限制增加至 40px)
+			cx: 534,
+			cy: 861,
+			width: 181,
+			height: 181,
+			maxOffset: 40
+		},
+		{
+			// 右眼 (尺寸 179，最大位移限制增加至 40px)
+			cx: 942,
+			cy: 816,
+			width: 179,
+			height: 179,
+			maxOffset: 40
+		}
+	];
+
+	function loadImage(src: string): Promise<HTMLImageElement> {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			img.decoding = 'async';
+			img.onload = () => resolve(img);
+			img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+			img.src = src;
+		});
+	}
+
+
+	async function initHero2Canvas() {
+		const root = document.querySelector<HTMLElement>('[data-hero-2-character]');
+		const canvas = root?.querySelector<HTMLCanvasElement>('[data-hero-2-canvas]');
+		if (!root || !canvas) return;
+
+		const mainSrc = canvas.dataset.mainSrc;
+		const maskSrc = canvas.dataset.maskSrc;
+		const eyeSrc = canvas.dataset.eyeSrc;
+		if (!mainSrc || !maskSrc || !eyeSrc) return;
+
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+
+		let mainImg: HTMLImageElement;
+		let maskImg: HTMLImageElement;
+		let eyeImg: HTMLImageElement;
+		try {
+			[mainImg, maskImg, eyeImg] = await Promise.all([loadImage(mainSrc), loadImage(maskSrc), loadImage(eyeSrc)]);
+		} catch (err) {
+			console.error('Hero2 canvas load failed:', err);
+			return;
+		}
+
+		canvas.setAttribute('data-canvas-ready', 'true');
+
+		let targetX = 0;
+		let targetY = 0;
+		let currentX = 0;
+		let currentY = 0;
+		let animationFrameId: number | null = null;
+
+		const handlePointerMove = (e: MouseEvent | PointerEvent) => {
+			const rect = canvas.getBoundingClientRect();
+			if (rect.width === 0 || rect.height === 0) return;
+
+			const centerX = rect.left + rect.width / 2;
+			const centerY = rect.top + rect.height / 2;
+
+			const dx = (e.clientX - centerX) / (window.innerWidth / 2);
+			const dy = (e.clientY - centerY) / (window.innerHeight / 2);
+
+			const dist = Math.hypot(dx, dy);
+			const clampedDist = Math.min(dist, 1);
+			const angle = Math.atan2(dy, dx);
+
+			targetX = Math.cos(angle) * clampedDist;
+			targetY = Math.sin(angle) * clampedDist;
+		};
+
+		const handlePointerLeave = () => {
+			targetX = 0;
+			targetY = 0;
+		};
+
+		const speedThreshold = 0.05; // 触发拉伸形变的速度阈值
+
+		const render = () => {
+			const dx = targetX - currentX;
+			const dy = targetY - currentY;
+
+			// 缓动系数由 0.22 调整为 0.11，使整体过渡平滑时间增加约 0.2s
+			currentX += dx * 0.11;
+			currentY += dy * 0.11;
+
+			// 速度与角度计算（与全局鼠标 blob 逻辑完全对齐）
+			const vx = dx;
+			const vy = dy;
+			const speed = Math.hypot(vx, vy);
+			const angle = Math.atan2(vy, vx);
+
+			let sx = 1;
+			let sy = 1;
+			let rot = 0;
+
+			if (speed > speedThreshold) {
+				const stretch = Math.min(0.55, (speed - speedThreshold) / 0.85);
+				sx = 1 + stretch * 0.9;
+				sy = 1 - stretch * 0.55;
+				rot = angle;
+			}
+
+			ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+			// 1. 最底层：绘制 main-mask 垫底图 (完全填充人物轮廓并作为眼白)
+			ctx.drawImage(maskImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+			// 2. 中间层：绘制左右两个随速度动态形变并移动的眼球
+			EYES_CONFIG.forEach((eye) => {
+				const offsetX = currentX * eye.maxOffset;
+				const offsetY = currentY * eye.maxOffset;
+
+				const eyeCenterX = eye.cx + offsetX;
+				const eyeCenterY = eye.cy + offsetY;
+
+				ctx.save();
+				ctx.translate(eyeCenterX, eyeCenterY);
+				ctx.rotate(rot);
+				ctx.scale(sx, sy);
+				ctx.rotate(-rot);
+				// 以中心为原点绘制眼球
+				ctx.drawImage(eyeImg, -eye.width / 2, -eye.height / 2, eye.width, eye.height);
+				ctx.restore();
+			});
+
+			// 3. 最顶层：绘制人物原图 (镂空眼眶露出下面的眼白和眼球，其余部分盖住多余眼球)
+			ctx.drawImage(mainImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+			animationFrameId = requestAnimationFrame(render);
+		};
+
+		window.addEventListener('pointermove', handlePointerMove, { passive: true });
+		window.addEventListener('mouseleave', handlePointerLeave);
+		render();
+
+		// Cleanup on Astro page transition
+		document.addEventListener(
+			'astro:before-swap',
+			() => {
+				if (animationFrameId) cancelAnimationFrame(animationFrameId);
+				window.removeEventListener('pointermove', handlePointerMove);
+				window.removeEventListener('mouseleave', handlePointerLeave);
+			},
+			{ once: true }
+		);
+	}
+
+	initHero2Canvas();
+	document.addEventListener('astro:page-load', initHero2Canvas);
+</script>

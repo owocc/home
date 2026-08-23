@@ -8,7 +8,7 @@ import Pencil from '@lucide/astro/icons/pencil';
 import Sparkles from '@lucide/astro/icons/sparkles';
 import MessageCircle from '@lucide/astro/icons/message-circle';
 import BlogCard from '../components/BlogCard.astro';
-import HeroCharacter from '../components/HeroCharacter.astro';
+import Hero2 from '../components/Hero2.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import siteConfig from '../data/site';
@@ -36,32 +36,24 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 			</div>
 
 			<div class="home-hero__scene">
-				<div class="home-hero__stage">
-					<div class="home-hero__wall" aria-hidden="true">
-						<span class="home-hero__wall-label display">IDEAS</span>
-						<span class="hero-sticker hero-sticker--code" data-parallax="1.1"><CodeXml class="icon" size={30} stroke-width={2.4} /></span>
-						<span class="hero-sticker hero-sticker--spark" data-parallax="1.6"><Sparkles class="icon" size={34} stroke-width={2.3} /></span>
-						<span class="hero-sticker hero-sticker--note script" data-parallax="0.7">make it real!</span>
-					</div>
-				</div>
-				<HeroCharacter />
-			</div>
+			<Hero2 />
 
-			<div class="home-hero__title-wrap" data-reveal>
-				<span class="home-hero__script script" aria-hidden="true">personal</span>
-				<h1 id="hero-title" class="display" aria-label={`${siteConfig.identity.name}的个人作品集`}>
-					<span>PORT</span><span class="poster-label">FOLIO.</span>
-				</h1>
-			</div>
 
-			<div class="home-hero__bottom" data-reveal>
+				<!-- <div class="home-hero__title-wrap" data-reveal>
+					<span class="home-hero__script script" aria-hidden="true">personal</span>
+					<h1 id="hero-title" class="display" aria-label={`${siteConfig.identity.name}的个人作品集`}>
+						<span>PORT</span><span class="poster-label">FOLIO.</span>
+					</h1>
+				</div> -->
+			</div>
+			<!-- <div class="home-hero__bottom" data-reveal>
 				<p class="home-hero__role">
 					<span class="eyebrow" data-i18n-key="hero.currently">CURRENTLY</span>
 					<strong data-i18n-key="hero.role">{siteConfig.identity.role}</strong>
 				</p>
 				<p class="home-hero__intro" data-i18n-key="hero.intro">{siteConfig.identity.intro}</p>
 				<a class="button" href="#projects"><span data-i18n-key="hero.scrollDown">向下看看</span> <ArrowDown class="icon" size={16} stroke-width={2.5} /></a>
-			</div>
+			</div> -->
 		</div>
 	</section>
 

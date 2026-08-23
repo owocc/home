@@ -73,7 +73,7 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 				margin-left: -12vmax;
 				margin-top: -12vmax;
 				border-radius: 50%;
-				background: var(--orange);
+				background: var(--paper, #f4efe5);
 				z-index: 9998;
 				transform: scale(0);
 				opacity: 0;
@@ -105,7 +105,6 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 				z-index: 9999;
 				opacity: 0;
 				will-change: transform, border-radius, width, height, left, top, margin;
-				transition: opacity 220ms ease, width 160ms ease, height 160ms ease, margin 160ms ease, background 160ms ease;
 			}
 			.cursor-blob.is-visible {
 				opacity: 1;
@@ -186,7 +185,7 @@ const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).href : undefi
 		</script>
 	</head>
 	<body>
-		<div class="route-blob" id="route-blob" data-route-blob aria-hidden="true" transition:persist><div class="route-blob__inner"></div></div>
+		<div class="route-blob" id="route-blob" data-route-blob aria-hidden="true" transition:persist style="background-color: var(--paper, #f4efe5);"><div class="route-blob__inner"></div></div>
 		<div class="cursor-blob" id="cursor-blob" aria-hidden="true" transition:persist></div>
 		<a class="skip-link" href="#main-content" data-i18n-key="skip.link">跳到主要内容</a>
 		<Header currentPath={currentPath} />
